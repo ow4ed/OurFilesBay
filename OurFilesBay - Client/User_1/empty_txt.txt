@@ -1,0 +1,9 @@
+Acesso a uma lista de forma sincronizada por várias Threads
+
+sem syncronized o resultado é a toa ! (ambos os casos) - e de esperar
+
+syncronized no metodo run () o resultado e a toa! ( ambos os casos)
+
+bloco syncronized(lista) {} o resultado esta certo quando apenas faco o add, mas se fizer um sysout do size o resultado e a toa!
+
+

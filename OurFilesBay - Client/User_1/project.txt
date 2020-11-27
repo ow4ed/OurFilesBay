@@ -1,0 +1,30 @@
+User_1 - aqui estao as yello pages....
+
+usersDetailsList
+
+21908 169.254.100.249 8082
+1024 169.254.100.249 8082
+335125 169.254.100.249 8083
+21908 169.254.100.249 8083
+1024 169.254.100.249 8083
+
+filesList
+
+javaNoob.png
+mihai noob.png
+ganco.png
+javaNoob.png
+mihai noob.png
+
+allinfo
+
+
+
+
+
+
+====================0
+resolver o problema de os users tarem sempre conectados ao diretorio, não faz sentido
+
+
+abrir uma socket sempre que e feita uma pesquisa ?
