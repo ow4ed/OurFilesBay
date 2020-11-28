@@ -58,13 +58,7 @@ public class FileRequest extends ClientToClient implements Runnable{
 		} catch (InterruptedException | IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		} finally {
-			try {
-				super.getScoket().close();
-				super.getObjectInputStream().close();
-				super.getObjectOutputStream().close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}	
+			super.closeConnections();
 		}
 	}
 

@@ -17,20 +17,6 @@ public abstract class ClientToClient {
 		this.socket = socket;
 	}
 	
-	protected void doConnections() {
-		try {
-			objectOutputStream = new ObjectOutputStream(socket.getOutputStream());//This constructor will block until the corresponding 
-			objectInputStream = new ObjectInputStream(socket.getInputStream());//ObjectOutputStream has written and flushed the header
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		System.out.println("User - Did connections Sucessfully!!!!");
-	}
-	
-	protected Socket getScoket() {
-		return socket;
-	}
-	
 	protected ObjectInputStream getObjectInputStream() {
 		return objectInputStream;
 	}
@@ -38,5 +24,24 @@ public abstract class ClientToClient {
 	protected ObjectOutputStream getObjectOutputStream() {
 		return objectOutputStream;
 	}
-
+	
+	protected void doConnections() {
+		try {
+			objectOutputStream = new ObjectOutputStream(socket.getOutputStream());//This constructor will block until the corresponding 
+			objectInputStream = new ObjectInputStream(socket.getInputStream());//ObjectOutputStream has written and flushed the header
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	protected void closeConnections() {
+		try {
+			objectOutputStream.close();
+			objectInputStream.close();
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 }

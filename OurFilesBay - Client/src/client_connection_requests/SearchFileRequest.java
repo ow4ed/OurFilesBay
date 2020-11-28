@@ -5,12 +5,12 @@ import java.net.Socket;
 
 import serializable_objects.UserFilesDetails;
 
-public class SearchRequest extends ClientToClient implements Runnable{
+public class SearchFileRequest extends ClientToClient implements Runnable{
 	
 	private Object msg;
 	private UserFilesDetails userFilesDetails;
 	
-	public SearchRequest(Socket socket, Object msg,UserFilesDetails userFilesDetails)  {
+	public SearchFileRequest(Socket socket, Object msg,UserFilesDetails userFilesDetails)  {
 		super(socket);
 		
 		this.msg = msg;
@@ -22,6 +22,7 @@ public class SearchRequest extends ClientToClient implements Runnable{
 		super.doConnections();
 
 		try {
+			
 			super.getObjectOutputStream().writeObject(msg);
 			Object o = super.getObjectInputStream().readObject();
 			if(o instanceof UserFilesDetails) { //se o que recebi for um FileDetails
@@ -32,13 +33,7 @@ public class SearchRequest extends ClientToClient implements Runnable{
 		} catch (ClassNotFoundException | IOException e) {
 			e.printStackTrace();
 		} finally {
-			try {
-				super.getScoket().close();
-				super.getObjectInputStream().close();
-				super.getObjectOutputStream().close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}	
+			super.closeConnections();
 		}
 	}
 	

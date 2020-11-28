@@ -7,9 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.LinkedList;
-import java.util.List;
+
 
 public abstract class ClientToDirectory {
 	//always initialize those 3 below
@@ -17,8 +15,16 @@ public abstract class ClientToDirectory {
 	private PrintWriter out = null; 
 	private BufferedReader in = null;
 	
-	public ClientToDirectory(Socket socket) throws UnknownHostException {
+	public ClientToDirectory(Socket socket) {
 		this.socket = socket;
+	}
+	
+	protected PrintWriter getOut() {
+		return out;
+	}
+	
+	protected BufferedReader getIn() {
+		return in;
 	}
 	
 	protected void doConnections() {
@@ -30,42 +36,15 @@ public abstract class ClientToDirectory {
 		} 
 	}
 	
-	//public abstract boolean signUpUser(String request);
-	
-	public class SignUpUserRequest extends ClientToDirectory{
-		
-		public SignUpUserRequest(Socket socket) throws UnknownHostException {
-			super(socket);
-			
+	protected void closeConnections() {
+		out.close();
+		try {
+			in.close();
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		
-		public boolean signUpUser(String request) { // a interface e que vai mandar o user fazer sungup
-			doConnections();
-			
-			out.println(request);
-			try {
-				String answer = in.readLine();
-				System.out.println("here is my ANSWER BRUH:"+answer);
-				if (answer.equals("accepted")) {// critical equals
-					return true;
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			} finally {
-				try {
-					socket.close();
-					in.close();
-					out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			return false;
-		}
-
 	}
-
-	
 	
 }
 /*
