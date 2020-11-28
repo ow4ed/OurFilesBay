@@ -91,9 +91,6 @@ public class Client{
 			e.printStackTrace();
 		}
 		
-		
-		
-		
 			searchResultJList.clear();
 			searchResultList.clear(); 
 			for (UserFilesDetails fd : getUsersDetailsAndFilesList(searchText)) {
