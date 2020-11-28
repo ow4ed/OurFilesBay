@@ -15,9 +15,9 @@ import javax.swing.JProgressBar;
 import javax.swing.ListModel;
 
 import client_connection_requests.ClientToDirectory;
-import client_connection_requests.ClientToDirectory.SignUpUserRequest;
 import client_connection_requests.FileRequest;
-import client_connection_requests.SearchRequest;
+import client_connection_requests.SearchFileRequest;
+import client_connection_requests.SignUpUserRequest;
 import coordination_structures.BlockingQueue;
 import coordination_structures.ThreadPool;
 import gui.GraphicInterface;
@@ -65,23 +65,22 @@ public class Client{
 		return userFilesJList;
 		
 	}
-	/*
+	
 	public void signUp() {
 		try {
-			//ClientToDirectory connection = new ClientToDirectory(new Socket(directoryIp, this.directoryPort));
-			ClientToDirectory connection = new SignUpUserRequest(new Socket(directoryIp, this.directoryPort));
+			SignUpUserRequest connection = new SignUpUserRequest(new Socket(directoryIp, this.directoryPort));
 			if (connection.signUpUser("INSC " + username + " " + userIp.getHostAddress() + " " + userPort)) {
-				ClientServer server = new ClientServer(userPort, username,pool);
+				ClientServer server = new ClientServer(userPort, username, pool);
 				server.startServing();
 			} else {
-				System.out.println(username + " - Error: Directory did not accepted sign up request!");
+				System.out.println(username + " - Error during sign up request!");
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 	}
+	
 
 	public void updateSearchResultJList(String searchText) {
 		try {
@@ -109,7 +108,8 @@ public class Client{
 		WordSearchMessage search = new WordSearchMessage(searchString);
 		List<UserFilesDetails> usersDetailsAndFilesList = new ArrayList<UserFilesDetails>();
 		try {
-			ClientToDirectory clientToDirectoryConnection = new ClientToDirectory(new Socket(directoryIp, this.directoryPort));
+			ClientToDirectory clientToDirectoryConnection = new SignUpUserRequest(new Socket(directoryIp, this.directoryPort));
+		
 			for (String ipAndPort : clientToDirectoryConnection.geIpsAndPortsOfUsersConnected(userIp.getHostAddress(), userPort)) {
 				String[] info = ipAndPort.split(" ");
 
@@ -117,7 +117,7 @@ public class Client{
 				pool.submit(clientToClientConnection);
 				
 				usersDetailsAndFilesList.add(userFilesDetails);
-					/*
+					
 					Thread thread = new Thread(clientToClientConnection);
 					thread.start();
 					try {
@@ -134,7 +134,7 @@ public class Client{
 		}
 		return usersDetailsAndFilesList;
 	}
-*/
+
 	public void updateUserFilesJList() {
 		userFilesJList.clear();
 		File[] files = new File(username).listFiles();
