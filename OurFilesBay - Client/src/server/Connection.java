@@ -29,66 +29,23 @@ public class Connection implements Runnable {
 	
 	@Override
 	public synchronized void run() {
-		doConnections(socket);
-		
+		doConnections();
 		try {
 			Object o = objectInputStream.readObject();
-			
-			if (o instanceof WordSearchMessage) {// if is instance of WrodSearchMessage  is done whit whit the o, dosen't check it again
-				WordSearchMessage message = (WordSearchMessage) o;
-				Runnable task = new Runnable() {
-					@Override
-					public void run() {
-						File[] files = findFiles(message.getMessage());// findFiles here bad
-						UserFilesDetails answer = new UserFilesDetails(username, socket.getLocalAddress().getHostAddress(),socket.getLocalPort(), files);
-						try {
-							objectOutputStream.writeObject(answer);
-						} catch (IOException e) {
-							e.printStackTrace();
-						} finally {
-							try {
-								socket.close();
-								objectOutputStream.close();
-								objectInputStream.close();
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
-					}
-				};
-				pool.submit(task);
+			//types of requests another client can make to the Client Server
+			if (o instanceof WordSearchMessage) {// if is instance of WrodSearchMessage is done whit whit the o, dosen't check it again
+				sendFilesInfo((WordSearchMessage) o);
 			} else {
-				while (o instanceof FileBlockRequest) {//i have an while cycle, is good idea to have a thread pool
-					FileBlockRequest fileBlock = (FileBlockRequest) o;
-					Runnable task = new Runnable() {//imagine 100 connection threads, doing a while cycle at the same time
-						@Override
-						public void run() {
-							File[] files = findFiles(fileBlock.getFileName());
-							try {
-								byte[] fileContents = Files.readAllBytes(files[0].toPath());
-								FilePart filepart = new FilePart(fileContents, fileBlock.getSize(), fileBlock.getOffset());
-								objectOutputStream.writeObject(filepart);
-							} catch (IOException e) {
-								e.printStackTrace();
-							} 
-						}	
-					};
-					pool.submit(task);//i'm just adding a task in a list of things to process at a controllable paste.
-					//this way i'm like responding at 5 request at the time, and not 100 :)
-					o = objectInputStream.readObject();//while cycle condition
-					
-					//where do i close scket , in and out ?
-					
-					
+				if(o instanceof FileBlockRequest) {
+					sendFileBlocks((FileBlockRequest) o);
 				}
 			}
-		} catch (ClassNotFoundException|IOException e) { //always gives me IOException
+		} catch (ClassNotFoundException | IOException e) { 
 			e.printStackTrace();
 		}
 	}
 	
-	private void doConnections(Socket socket) {
+	private void doConnections() {
 		System.out.println(username+" - an user has has request an connection:" +socket+"(socket)");
 		try {
 			objectOutputStream = new ObjectOutputStream(socket.getOutputStream());//first we need to create out
@@ -98,7 +55,72 @@ public class Connection implements Runnable {
 		}
 	}
 	
-	private File[] findFiles(String keyword) {
+	private void closeConnections() {
+		try {
+			objectOutputStream.close();
+			objectInputStream.close();
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void sendFilesInfo(WordSearchMessage message) {
+		Runnable task = new Runnable() {
+			@Override
+			public void run() {
+				File[] files = findFiles(message.getMessage());// findFiles here bad
+				UserFilesDetails answer = new UserFilesDetails(username, socket.getLocalAddress().getHostAddress(),socket.getLocalPort(), files);
+				try {
+					try {//delete lag simulation
+						System.out.println("SLEEPY WIPPY TIME");
+						Thread.sleep(10000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+					//	e.printStackTrace();
+					}
+					objectOutputStream.writeObject(answer);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					closeConnections();
+				}
+			}
+		};
+		pool.submit(task);
+	}
+	
+	private void sendFileBlocks(Object o) {
+		while (o instanceof FileBlockRequest) {//i have an while cycle, is good idea to have a thread pool
+			sendFileBlock((FileBlockRequest) o);
+			
+			try {
+				o = objectInputStream.readObject();//while "iterator" - may be dangerous!
+			} catch (ClassNotFoundException | IOException e) {
+				e.printStackTrace();
+			}
+		}
+		closeConnections();//my only persistent connection!(careful when i close it on the other side)
+	}
+	
+	private void sendFileBlock(FileBlockRequest fileBlock) {
+		Runnable task = new Runnable() {//imagine 100 connection threads, doing a while cycle at the same time
+			@Override
+			public void run() {
+				File[] files = findFiles(fileBlock.getFileName());//maybe this isn't optimal, view the function for changes
+				try {//it dosen't look optimal but is what i want, i want to actually check if i'm sending the right block, imagine the client deletes the file
+					byte[] fileContents = Files.readAllBytes(files[0].toPath());//while his server is sending file blocks 
+					FilePart filepart = new FilePart(fileContents, fileBlock.getSize(), fileBlock.getOffset());
+					objectOutputStream.writeObject(filepart);
+				} catch (IOException e) {
+					e.printStackTrace();
+				} 
+			}	
+		};
+		pool.submit(task);
+	}
+	
+	private File[] findFiles(String keyword) {// need to thing about, where to place this method
 		File[] files = new File(username).listFiles(new FileFilter() {
 			public boolean accept(File f) {
 				return f.getName().contains(keyword);

@@ -13,7 +13,7 @@ public class Directory {
 	private int port;
 	private ServerSocket serverSocket = null;
 	
-	private List<String> users = new ArrayList<String>();
+	private List<String> clients = new ArrayList<String>();
 	private ThreadPool pool;
 	
 	public Directory(int port, int nCoresToUse) {
@@ -28,34 +28,42 @@ public class Directory {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		System.out.println("Directory - server started ...");
 
 		Runnable task = new Runnable() {
 			@Override
 			public void run() {
-				while (!Thread.currentThread().isInterrupted()) {
-					System.out.println("Directory - server in standbay ...");
-					try {
-						Socket clientSocket = serverSocket.accept();// clientSocket won't be closed here
-						Connection connection = new Connection(clientSocket, pool, users);
-						System.out.println("Directory - conection thread created: " + clientSocket);
-						pool.submit(connection);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-				try {
-					serverSocket.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+				serve();
 			}
 		};
-		pool.submit(task);
+
+		Thread thread = new Thread(task);
+		thread.start();
+		System.out.println("Directory - server started ...");
+	}
+
+	private void serve() {
+		while (!Thread.currentThread().isInterrupted()) {
+			System.out.println("Directory - server in standbay ...");
+			try {
+				Socket clientSocket = serverSocket.accept();// clientSocket won't be closed here
+				Connection connection = new Connection(clientSocket, pool, clients);
+				System.out.println("Directory - conection thread created: " + clientSocket);
+				pool.submit(connection);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public static void main(String[] args) {
-		Directory directory = new Directory(8080,2); //2 cores :)
+		
+		Directory directory = new Directory(8080,3); 
+		
 		directory.startServing();
 
 	}

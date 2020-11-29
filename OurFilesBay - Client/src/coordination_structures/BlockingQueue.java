@@ -38,7 +38,7 @@ public class BlockingQueue<E> {//supposedly it is designed to be accessed by mul
 			wait();//inportant to use notify
 		}
 		queue.add(e);
-		notify();//important to use wait
+		notifyAll();//important to use wait
 		//in my thread pool i want to notify one of the workers that queue is not empty, not All
 		//but there are a thread in client that can be in wait aswell 
 	}

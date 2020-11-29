@@ -14,9 +14,9 @@ import javax.swing.DefaultListModel;
 import javax.swing.JProgressBar;
 import javax.swing.ListModel;
 
-import client_connection_requests.ClientToDirectory;
 import client_connection_requests.FileRequest;
-import client_connection_requests.SearchFileRequest;
+import client_connection_requests.IpsAndPortsOfUsersConnectedRequest;
+import client_connection_requests.SearchRequest;
 import client_connection_requests.SignUpUserRequest;
 import coordination_structures.BlockingQueue;
 import coordination_structures.ThreadPool;
@@ -26,6 +26,17 @@ import serializable_objects.UserFilesDetails;
 import serializable_objects.WordSearchMessage;
 import server.ClientServer;
 
+
+
+/*
+ * awt.List is a List component used in GUI where as java.util.List is an interface for the lists data structure 
+ * care
+ * 
+ *  5 to 20  lines
+ * 
+ * 
+ */
+//CopyOnWriteArrayList
 public class Client{
 
 	private String username;// = folder
@@ -35,21 +46,25 @@ public class Client{
 	private int directoryPort;
 	private ThreadPool pool;
 	
+	
+	//awt.List is a List component used in GUI where as java.util.List is an interface for the lists data structure change this part
 	private DefaultListModel<String> userFilesJList = new DefaultListModel<String>();  
 	private DefaultListModel<String> searchResultJList = new DefaultListModel<String>();  
 	private List<String> searchResultList = new ArrayList<String>();
 	
-	private static final int BLOCK_SIZE = 1024;
-	private int blocksDownloaded;
-	private byte[] file;
 	
-	public Client(String username, int portUser,String inetAddressDirectory, int portDirectory,int nCoresToUse) throws UnknownHostException {
+	public Client(String username, int portUser,String inetAddressDirectory, int portDirectory,int nCoresToUse) {
 		this.username = username;
-		this.userIp = InetAddress.getLocalHost();//address of user, thrws Exception
+		try {
+			this.userIp = InetAddress.getLocalHost();
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
 		this.userPort = portUser;
 		this.directoryIp = inetAddressDirectory;
 		this.directoryPort = portDirectory;
 		this.pool = new ThreadPool(nCoresToUse);
+		
 	}
 	
 	public String getUsername() {
@@ -60,16 +75,15 @@ public class Client{
 		return searchResultJList;
 	}
 	
-	
 	public DefaultListModel<String> getUserFilesJList(){
 		return userFilesJList;
 		
 	}
 	
-	public void signUp() {
+	public void signUp() {//first thing need to be done 
 		try {
-			SignUpUserRequest connection = new SignUpUserRequest(new Socket(directoryIp, this.directoryPort));
-			if (connection.signUpUser("INSC " + username + " " + userIp.getHostAddress() + " " + userPort)) {
+			SignUpUserRequest clientToDirectory = new SignUpUserRequest(new Socket(directoryIp, this.directoryPort));
+			if (clientToDirectory.signUpUser("INSC " + username + " " + userIp.getHostAddress() + " " + userPort)) {
 				ClientServer server = new ClientServer(userPort, username, pool);
 				server.startServing();
 			} else {
@@ -78,61 +92,51 @@ public class Client{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 	}
-	
 
-	public void updateSearchResultJList(String searchText) {
-		try {
-			ClientToDirectory clientToDirectoryConnection = new ClientToDirectory(new Socket(directoryIp, this.directoryPort));
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-			searchResultJList.clear();
-			searchResultList.clear(); 
-			for (UserFilesDetails fd : getUsersDetailsAndFilesList(searchText)) {
-				for (int i = 0; i < fd.getFiles().length; i++) {
-					searchResultJList.addElement(fd.getUserName() + ": " + fd.getFiles()[i].getName() + " ,"+ fd.getFiles()[i].length() + " bytes");
-					searchResultList.add(fd.getFiles()[i].getName() +" "+ fd.getFiles()[i].length() + " " + fd.getIp() + " " + fd.getPort());
+	public void updateSearchResult(String searchText) {// make this a thread | 1 task -> 1 Thread every time this thread // stars, of here was another going on it need to be killed
+		Runnable searchTask = new Runnable() {
+			@Override
+			public void run() {
+				try {
+					IpsAndPortsOfUsersConnectedRequest clientToDirectory = new IpsAndPortsOfUsersConnectedRequest(
+							new Socket(directoryIp, directoryPort), userIp.getHostAddress(), userPort);
+					updateLists(clientToDirectory.getIpsAndPortsOfUsersConnected(), searchText);
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
+		};
+		pool.submit(searchTask);
 	}
 	
-	private List<UserFilesDetails> getUsersDetailsAndFilesList(String searchString) {//faria setnido ser um runnable porque fica em wait
-		WordSearchMessage search = new WordSearchMessage(searchString);
-		List<UserFilesDetails> usersDetailsAndFilesList = new ArrayList<UserFilesDetails>();
-		try {
-			ClientToDirectory clientToDirectoryConnection = new SignUpUserRequest(new Socket(directoryIp, this.directoryPort));
-		
-			for (String ipAndPort : clientToDirectoryConnection.geIpsAndPortsOfUsersConnected(userIp.getHostAddress(), userPort)) {
-				String[] info = ipAndPort.split(" ");
-
-				SearchRequest clientToClientConnection = new SearchRequest(new Socket(info[0], Integer.parseInt(info[1])), search);
-				pool.submit(clientToClientConnection);
-				
-				usersDetailsAndFilesList.add(userFilesDetails);
-					
-					Thread thread = new Thread(clientToClientConnection);
-					thread.start();
-					try {
-						thread.join();  /// not sure why tho yet
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-					usersDetailsAndFilesList.add(clientToClientConnection.getFileDetails());
-					
+	private void updateLists(List<String> ipsAndPortsOfUsersConnected, String searchText) {
+		searchResultJList.clear();
+		searchResultList.clear();
+		WordSearchMessage wordSearchMessage = new WordSearchMessage(searchText);
+		for (String user : ipsAndPortsOfUsersConnected) {
+			String[] info = user.split(" ");
+			try {
+				SearchRequest clientToClient = new SearchRequest(new Socket(info[0], Integer.parseInt(info[1])), wordSearchMessage);
+				UserFilesDetails userFilesDetails = clientToClient.getUserFilesDetails();
+				for (File file : userFilesDetails.getFiles()) {
+					searchResultJList.addElement(
+							userFilesDetails.getUserName() + ": " + file.getName() + " ," + file.length() + " bytes");
+					searchResultList.add(file.getName() + " " + file.length() + " " + userFilesDetails.getIp() + " "
+							+ userFilesDetails.getPort());
+					System.out.println(username+" - Added to JList:"+userFilesDetails.getUserName() + ": " + file.getName() + " ," + file.length() + " bytes");
+					System.out.println(username+" - Added to List:"+file.getName() + " " + file.length() + " " + userFilesDetails.getIp() + " "
+							+ userFilesDetails.getPort());
+				}
+			} catch (NumberFormatException | IOException e) {
+				e.printStackTrace();
 			}
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
 		}
-		return usersDetailsAndFilesList;
 	}
-
+	
+	
 	public void updateUserFilesJList() {
+		//Runnable searchTask = new Runnable() {  later
 		userFilesJList.clear();
 		File[] files = new File(username).listFiles();
 		for(File f:files) {
@@ -141,27 +145,20 @@ public class Client{
 	}
 
 	public void download(int index, JProgressBar progressJProgressBar) {//progressJProgressBar.setValue(0);
-		blocksDownloaded = 0;  
-
-		String s = searchResultList.get(index);
-		String[] info = s.split(" ");
-		String fileName = info[0];
-		int fileSize = Integer.parseInt(info[1]);
-		List<String> ipsAndPorts = new ArrayList<String>(); // porto + ip de quem tem
-		
-		for(String line:searchResultList) {
-			String[] lineInfo = line.split(" ");
-			if(lineInfo[0].equals(fileName) && Integer.parseInt(lineInfo[1])==fileSize) {
-				ipsAndPorts.add(lineInfo[2]+" "+lineInfo[3]);
-			}
-		}
+		//Runnable download = new Runnable() {  later
+		//int BLOCK_SIZE = 1024;
+		int blocksDownloaded = 0;
+		//byte[] file;
 
 		
-		int parts = fileSize/BLOCK_SIZE; 
-		int lastpart = fileSize-(BLOCK_SIZE*parts);
+		List<String> ipsAndPorts = getIpsAndPortsOfFile(index);
+		//int parts = fileSize/BLOCK_SIZE; 
+		//int lastpart = fileSize-(BLOCK_SIZE*parts);
+		
+		
+		//bq
 		BlockingQueue<FileBlockRequest> blocks = new BlockingQueue<>();
-		
-		file= new byte[fileSize];
+		//file= new byte[fileSize];
 		for(int i = 0;i<parts;i++) {
 			try {
 				blocks.offer(new FileBlockRequest(fileName, BLOCK_SIZE, BLOCK_SIZE*i));
@@ -177,14 +174,16 @@ public class Client{
 				e1.printStackTrace();
 			}
 		}
-	
+		//
+		
+		
 		for(int i = 0; i < ipsAndPorts.size(); i++){
 			String user = ipsAndPorts.get(i);
 			String[] userFields = user.split(" ");
-			FileRequest dfp;
+
 			try {
-				System.out.println("i'm tryng to open a socket whit IP and Port:"+userFields[0]+","+userFields[1]+";");
-				dfp = new FileRequest(new Socket(userFields[0], Integer.parseInt(userFields[1])), blocks, file, blocksDownloaded,progressJProgressBar);
+				//System.out.println("i'm tryng to open a socket whit IP and Port:"+userFields[0]+","+userFields[1]+";");
+				FileRequest dfp = new FileRequest(new Socket(userFields[0], Integer.parseInt(userFields[1])), blocks, file, blocksDownloaded,progressJProgressBar);
 				//i have en error here :(
 				
 				Thread thread = new Thread(dfp);
@@ -203,14 +202,26 @@ public class Client{
 		
 	}
 	
+	private List<String> getIpsAndPortsOfFile(int index) {
+		List<String> ipsAndPorts = new ArrayList<String>(); // port + Ip of who had the file
+		
+		String s = searchResultList.get(index);
+		String[] info = s.split(" ");
+		String fileName = info[0];
+		String fileSize = info[1];
+		for(String line:searchResultList) {
+			String[] lineInfo = line.split(" ");
+			if(lineInfo[0].equals(fileName) && lineInfo[1].equals(fileSize)) {
+				ipsAndPorts.add(lineInfo[2]+" "+lineInfo[3]);
+			}
+		}
+		return ipsAndPorts;
+	}
+
 	public static void main(String[] args) {
 		for (int i = 1; i <= 3; i++) {
-			try { 
-				Client user = new Client("User_"+i,8080+i,"127.0.0.1", 8080, 4);// 127.0.0.1 localhost 
-				GraphicInterface gui = new GraphicInterface(user);//8080 port, but could be any port
-			} catch (UnknownHostException e) {
-				e.printStackTrace();
-			}
+			Client user = new Client("User_" + i, 8000 + i, "127.0.0.1", 8080, 4);// 127.0.0.1 localhost
+			GraphicInterface gui = new GraphicInterface(user);// 8000 port, but could be any port
 		}
 
 	}

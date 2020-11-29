@@ -27,7 +27,6 @@ public class ThreadPool {
 	}
 	
 	private class Worker implements Runnable{
-		
 		@Override
 		public void run() {
 			while(!Thread.currentThread().isInterrupted()){

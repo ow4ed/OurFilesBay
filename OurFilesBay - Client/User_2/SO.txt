@@ -1,2 +1,0 @@
-ln ficheiroOrigem nomedolink:cria um hard link
-ln -s ficheiroOrigem nomedolink:cria um soft link
