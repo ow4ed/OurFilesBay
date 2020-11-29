@@ -23,18 +23,17 @@ import javax.swing.event.ListSelectionListener;
 
 import client.Client;
 
-
 public class GraphicInterface {
 	
 	private Client user;
 	private JFrame frame;
 	private File backgroundImage;
 	
-	public GraphicInterface(Client user) {//have a gui as an atribute on User would be useless
+	public GraphicInterface(Client user) {//have a gui as an attribute on User would be useless
 		this.backgroundImage = getBackgroundImage(System.getProperty("user.dir"),"architecture_img"); 
 	
 		this.user = user;
-		//this.user.signUp();
+		this.user.signUp();
 		
 		this.frame = new JFrame("Our Files - " + user.getUsername());
 		this.frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -43,16 +42,9 @@ public class GraphicInterface {
 		
 		addContentToFrame();
 		open();
-		
-		/*
-		frame.addWindowListener(new WindowAdapter(){
-            public void windowClosing(WindowEvent e){
-                int i=JOptionPane.showConfirmDialog(null, "Are you sure you want to leave our comrades ???");
-                if(i==0)
-                    System.exit(0);
-            }
-        });*/
-	}
+	}	
+
+	
 
 	public void open() {
 		frame.setVisible(true);
@@ -78,11 +70,11 @@ public class GraphicInterface {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println(user.getUsername()+" - tryed to perform Search action, Search Message:"+ searchJTextField.getText());
 				if(!searchJTextField.getText().isEmpty()) {//don't search if there is no input from user					
-				//	user.updateSearchResultJList(searchJTextField.getText());//list that displays search results  
+					user.updateSearchResult(searchJTextField.getText());//list that displays search results  
 				}
 				System.out.println(user.getUsername()+" - has performed Search action");
-				user.updateUserFilesJList();//update everytime user clicks the search button
-				
+				//user.updateUserFilesJList();//update every time user clicks the search button
+				//nah, batter have a button or something else 
 			}
 		});
 		searchJPanel.add(searchJButton, BorderLayout.LINE_END);
@@ -180,4 +172,14 @@ public class GraphicInterface {
 		});
 		return files[0];
 	}
+	
+	
+	/*
+	frame.addWindowListener(new WindowAdapter(){
+        public void windowClosing(WindowEvent e){
+            int i=JOptionPane.showConfirmDialog(null, "Are you sure you want to leave our comrades ???");
+            if(i==0)
+                System.exit(0);
+        }
+    });*/
 }

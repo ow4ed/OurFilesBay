@@ -12,8 +12,6 @@ public abstract class ClientToClient {
 	private ObjectInputStream objectInputStream = null;
 
 	public ClientToClient(Socket socket) {
-		super();
-
 		this.socket = socket;
 	}
 	
@@ -27,8 +25,9 @@ public abstract class ClientToClient {
 	
 	protected void doConnections() {
 		try {
-			objectOutputStream = new ObjectOutputStream(socket.getOutputStream());//This constructor will block until the corresponding 
-			objectInputStream = new ObjectInputStream(socket.getInputStream());//ObjectOutputStream has written and flushed the header
+			objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+			objectInputStream = new ObjectInputStream(socket.getInputStream());//This constructor will block until the corresponding 
+			//ObjectOutputStream has written and flushed the header
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
