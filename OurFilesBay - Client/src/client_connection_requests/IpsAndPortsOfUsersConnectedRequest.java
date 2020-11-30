@@ -7,18 +7,13 @@ import java.util.List;
 
 
 public class IpsAndPortsOfUsersConnectedRequest extends ClientToDirectory {
-	
-	private String userIp;
-	private int userPort;
 
-	public IpsAndPortsOfUsersConnectedRequest(Socket socket, String userIp, int userPort)  {
+	public IpsAndPortsOfUsersConnectedRequest(Socket socket)  {
 		super(socket);
-		
-		this.userIp = userIp;
-		this.userPort = userPort;
+	
 	}
 
-	public List<String> getIpsAndPortsOfUsersConnected() {
+	public List<String> getIpsAndPortsOfUsersConnected(String userIp,int userPort) {
 		List<String> connectedUsers = new ArrayList<String>();
 		super.doConnections();
 		super.getOut().println("CLT");// critical

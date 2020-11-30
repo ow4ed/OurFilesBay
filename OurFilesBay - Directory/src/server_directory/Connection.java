@@ -1,4 +1,4 @@
-package server;
+package server_directory;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -9,7 +9,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
 
-import coordination_structures.ThreadPool;
+import coordination_structures_directory.ThreadPool;
 
 
 /*
@@ -39,27 +39,27 @@ public class Connection implements Runnable {// if this isn't a thread, then ser
 	private PrintWriter out = null;// meanwhile another user may request an connection, but the server will be buisy processing the previous one
 	private BufferedReader in = null;
 	private ThreadPool pool;
-	private List<String> users;
+	private List<String> clients;
 	
-	public Connection(Socket socket, ThreadPool pool, List<String> users){
+	public Connection(Socket socket, ThreadPool pool, List<String> clients){
 		this.socket = socket;
 		this.pool = pool;
-		this.users = users;
+		this.clients = clients;
 	}
 	
 	@Override
 	public void run() {
 		doConnections();
-		try {// non pressistent connections
+		try {
 			String request = in.readLine(); // triggers try catch block
 			String[] info = request.split(" ");
 			System.out.println("Directory - recived: " + request + "(request)");
 			// types of requests a client can make to the Directory: 
 			if (info[0].equals("INSC")) {
-				signUpClient(request.substring(5, request.length())); //change to parts
+				signUpClient(request.substring(5, request.length())); //change to parts 
 			} else { //if parts[0] fulfills the first if condition i don't check the second, because of if else block 
 				if (info[0].equals("CLT")) {
-					sendUsersConnectedToClient();
+					sendClientsConnected();
 				}		
 			}
 		} catch (IOException e) {
@@ -68,7 +68,7 @@ public class Connection implements Runnable {// if this isn't a thread, then ser
 	}
 	
 	private void doConnections() {
-		System.out.println("Directory - an user has request an connection: "+socket+"(socket)");
+		System.out.println("Directory - an Client has request an connection: "+socket+"(socket)");
 		try {
 			out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
 			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -87,18 +87,18 @@ public class Connection implements Runnable {// if this isn't a thread, then ser
 		}
 	}
 	
-	private void signUpClient(String user) {
+	private void signUpClient(String client) {
 		Runnable task = new Runnable() { //if i have like 2k users connected// and like 400 connections asking for the uses //if divide this in parts i won't have 400 active threads
 			@Override					//10 more asking to sing up
 			public void run() {			//20 more asking to leave
-				synchronized (users) {	// this task can take time to execute no ?, like i have 430 threads competing for acess to the users list
-					users.add(user);// shared resource
+				synchronized (clients) {	// this task can take time to execute no ?, like i have 430 threads competing for acess to the users list
+					clients.add(client);// shared resource
 					out.println("accepted");// critical string, method equals will be used
-					System.out.println("Directory - Users Connected List:");//i'll do something similar like this in directory gui 
-					for (String s : users) {// shared resource
+					System.out.println("Directory - Clients  Connected List:");//i'll do something similar like this in directory gui 
+					for (String s : clients) {// shared resource
 						System.out.println(s);
 					}
-					System.out.println("Directory - END Users Connected List");
+					System.out.println("Directory - END Clients Connected List");
 				}
 				closeConnections();
 			}
@@ -106,13 +106,13 @@ public class Connection implements Runnable {// if this isn't a thread, then ser
 		pool.submit(task);
 	}
 	
-	private void sendUsersConnectedToClient() {
+	private void sendClientsConnected() {
 		Runnable task = new Runnable() {
 			@Override
 			public void run() {
-				synchronized (users) {
-					for (String s : users) {// shared resource
-						out.println(s);
+				synchronized (clients) {
+					for (String s : clients) {// shared resource
+						out.println(s);//sending a object ?
 					}
 					out.println("END");// critical string, method equals will be used
 				}

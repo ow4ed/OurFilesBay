@@ -30,7 +30,7 @@ public class GraphicInterface {
 	private File backgroundImage;
 	
 	public GraphicInterface(Client user) {//have a gui as an attribute on User would be useless
-		this.backgroundImage = getBackgroundImage(System.getProperty("user.dir"),"architecture_img"); 
+		this.backgroundImage = getBackgroundImage(System.getProperty("user.dir"),"gui_image"); 
 	
 		this.user = user;
 		this.user.signUp();

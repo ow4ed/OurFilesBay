@@ -1,6 +1,10 @@
-package coordination_structures;
+package coordination_structures_directory;
 
 public class ThreadPool {
+	/*
+	 * In this package methods can throw exceptions
+	 * 
+	 */
 	
 	private BlockingQueue<Runnable> tasksQueue;//BlockingQueue of classes that implements the Runnable interface 
 	private Worker[] workers;
