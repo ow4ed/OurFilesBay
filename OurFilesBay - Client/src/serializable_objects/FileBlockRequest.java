@@ -6,14 +6,14 @@ public class FileBlockRequest implements Serializable{
 
 	private static final long serialVersionUID = -1059595226808527208L;
 	
-	private String fileName;
-	private int size;
-	private int offset;
+	private String fileName;//used for file identification 
+	private int size;//used for file identification 
+	private int beginning;
 	
-	public FileBlockRequest(String fileName, int size, int offset){
+	public FileBlockRequest(String fileName, int size, int beginning){
 		this.fileName = fileName;
 		this.size = size;
-		this.offset = offset;
+		this.beginning = beginning;
 	}
 
 	public String getFileName() {
@@ -24,8 +24,8 @@ public class FileBlockRequest implements Serializable{
 		return size;
 	}
 
-	public int getOffset() {
-		return offset;
+	public int getBeginning() {
+		return beginning;
 	}
 
 }

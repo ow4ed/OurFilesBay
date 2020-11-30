@@ -7,16 +7,12 @@ import serializable_objects.UserFilesDetails;
 import serializable_objects.WordSearchMessage;
 
 public class SearchRequest extends ClientToClient {
-
-	private WordSearchMessage wordSearchMessage;
 	
-	public SearchRequest(Socket socket, WordSearchMessage wordSearchMessage) {
+	public SearchRequest(Socket socket) {
 		super(socket);
-		
-		this.wordSearchMessage = wordSearchMessage;
 	}
 
-	public UserFilesDetails getUserFilesDetails() {
+	public UserFilesDetails getUserFilesDetails(WordSearchMessage wordSearchMessage) {
 		super.doConnections();
 
 		try {

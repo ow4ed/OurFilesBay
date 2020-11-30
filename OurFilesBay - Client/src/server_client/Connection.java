@@ -1,4 +1,4 @@
-package server;
+package server_client;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -8,9 +8,9 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
 
-import coordination_structures.ThreadPool;
+import coordination_structures_client.ThreadPool;
 import serializable_objects.FileBlockRequest;
-import serializable_objects.FilePart;
+import serializable_objects.FileBlock;
 import serializable_objects.UserFilesDetails;
 import serializable_objects.WordSearchMessage;
 
@@ -72,13 +72,13 @@ public class Connection implements Runnable {
 				File[] files = findFiles(message.getMessage());// findFiles here bad
 				UserFilesDetails answer = new UserFilesDetails(username, socket.getLocalAddress().getHostAddress(),socket.getLocalPort(), files);
 				try {
-					try {//delete lag simulation
+					try {//delete, lag simulation
 						System.out.println("SLEEPY WIPPY TIME");
 						Thread.sleep(10000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 					//	e.printStackTrace();
-					}
+					}//delete, lag simulation
 					objectOutputStream.writeObject(answer);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -95,7 +95,7 @@ public class Connection implements Runnable {
 			sendFileBlock((FileBlockRequest) o);
 			
 			try {
-				o = objectInputStream.readObject();//while "iterator" - may be dangerous!
+				o = objectInputStream.readObject();//while "iterator" 
 			} catch (ClassNotFoundException | IOException e) {
 				e.printStackTrace();
 			}
@@ -103,19 +103,19 @@ public class Connection implements Runnable {
 		closeConnections();//my only persistent connection!(careful when i close it on the other side)
 	}
 	
-	private void sendFileBlock(FileBlockRequest fileBlock) {
+	private void sendFileBlock(FileBlockRequest fileBlockRequest) {
 		Runnable task = new Runnable() {//imagine 100 connection threads, doing a while cycle at the same time
 			@Override
 			public void run() {
-				File[] files = findFiles(fileBlock.getFileName());//maybe this isn't optimal, view the function for changes
+				File[] files = findFiles(fileBlockRequest.getFileName());//maybe this isn't optimal, view the function for changes
 				try {//it dosen't look optimal but is what i want, i want to actually check if i'm sending the right block, imagine the client deletes the file
-					byte[] fileContents = Files.readAllBytes(files[0].toPath());//while his server is sending file blocks 
-					FilePart filepart = new FilePart(fileContents, fileBlock.getSize(), fileBlock.getOffset());
-					objectOutputStream.writeObject(filepart);
+					byte[] file = Files.readAllBytes(files[0].toPath());//while his server is sending file blocks 
+					FileBlock fileBlock = new FileBlock(fileBlockRequest.getBeginning(),fileBlockRequest.getSize(),file);
+					objectOutputStream.writeObject(fileBlock);
 				} catch (IOException e) {
 					e.printStackTrace();
 				} 
-			}	
+			}
 		};
 		pool.submit(task);
 	}

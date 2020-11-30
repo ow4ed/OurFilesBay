@@ -18,13 +18,13 @@ import client_connection_requests.FileRequest;
 import client_connection_requests.IpsAndPortsOfUsersConnectedRequest;
 import client_connection_requests.SearchRequest;
 import client_connection_requests.SignUpUserRequest;
-import coordination_structures.BlockingQueue;
-import coordination_structures.ThreadPool;
+import coordination_structures_client.FileBloksQueue;
+import coordination_structures_client.ThreadPool;
 import gui.GraphicInterface;
 import serializable_objects.FileBlockRequest;
 import serializable_objects.UserFilesDetails;
 import serializable_objects.WordSearchMessage;
-import server.ClientServer;
+import server_client.ClientServer;
 
 
 
@@ -52,6 +52,7 @@ public class Client{
 	private DefaultListModel<String> searchResultJList = new DefaultListModel<String>();  
 	private List<String> searchResultList = new ArrayList<String>();
 	
+	private final static int BLOCK_SIZE = 1024;
 	
 	public Client(String username, int portUser,String inetAddressDirectory, int portDirectory,int nCoresToUse) {
 		this.username = username;
@@ -80,8 +81,16 @@ public class Client{
 		
 	}
 	
-	public void signUp() {//first thing need to be done 
-		try {
+	/*
+	 * signUp method - First Thing needed to be done, this method is a priority. 
+	 * 
+	 * If this method is successful:
+	 * 1. Client is visible to Other Clients;
+	 * 2. client knows for sure that directory is accessible for requests
+	 * 
+	*/
+	public void signUp() {//first thing needed to be done, method is a priority when user launches the program
+		try {//if this method sucess i hav
 			SignUpUserRequest clientToDirectory = new SignUpUserRequest(new Socket(directoryIp, this.directoryPort));
 			if (clientToDirectory.signUpUser("INSC " + username + " " + userIp.getHostAddress() + " " + userPort)) {
 				ClientServer server = new ClientServer(userPort, username, pool);
@@ -98,10 +107,13 @@ public class Client{
 		Runnable searchTask = new Runnable() {
 			@Override
 			public void run() {
+				
 				try {
 					IpsAndPortsOfUsersConnectedRequest clientToDirectory = new IpsAndPortsOfUsersConnectedRequest(
-							new Socket(directoryIp, directoryPort), userIp.getHostAddress(), userPort);
-					updateLists(clientToDirectory.getIpsAndPortsOfUsersConnected(), searchText);
+							new Socket(directoryIp, directoryPort));
+					searchResultJList.clear();
+					searchResultList.clear();
+					updateLists(clientToDirectory.getIpsAndPortsOfUsersConnected(userIp.getHostAddress(), userPort), searchText);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -110,15 +122,21 @@ public class Client{
 		pool.submit(searchTask);
 	}
 	
+	/*
+	 * updateLists method maybe needs to create a thread per user, this way, for example Client
+	 * dosen't have to wait for the user_1 1hour to give all his files ... (if it takes him 1 hour)
+	 * 
+	 *i can have synchronized(defaultList) 
+	 * 
+	 * or i can implement a new coordination_structure: barrier
+	 */
 	private void updateLists(List<String> ipsAndPortsOfUsersConnected, String searchText) {
-		searchResultJList.clear();
-		searchResultList.clear();
 		WordSearchMessage wordSearchMessage = new WordSearchMessage(searchText);
 		for (String user : ipsAndPortsOfUsersConnected) {
 			String[] info = user.split(" ");
-			try {
-				SearchRequest clientToClient = new SearchRequest(new Socket(info[0], Integer.parseInt(info[1])), wordSearchMessage);
-				UserFilesDetails userFilesDetails = clientToClient.getUserFilesDetails();
+			try {//SearchRequest -> 1 Connection whit an user, the way i'm doing isn't optimal yet, imagine user_1 takes 1hour to give all his files info...
+				SearchRequest clientToClient = new SearchRequest(new Socket(info[0], Integer.parseInt(info[1])));
+				UserFilesDetails userFilesDetails = clientToClient.getUserFilesDetails( wordSearchMessage);
 				for (File file : userFilesDetails.getFiles()) {
 					searchResultJList.addElement(
 							userFilesDetails.getUserName() + ": " + file.getName() + " ," + file.length() + " bytes");
@@ -134,7 +152,6 @@ public class Client{
 		}
 	}
 	
-	
 	public void updateUserFilesJList() {
 		//Runnable searchTask = new Runnable() {  later
 		userFilesJList.clear();
@@ -144,78 +161,91 @@ public class Client{
 		}
 	}
 
-	public void download(int index, JProgressBar progressJProgressBar) {//progressJProgressBar.setValue(0);
-		//Runnable download = new Runnable() {  later
-		//int BLOCK_SIZE = 1024;
-		int blocksDownloaded = 0;
-		//byte[] file;
-
+	public void download(int index, JProgressBar progressJProgressBar) {//accessed by multiple Threads
+		//Runnable download = new Runnable() {  ?
+		String selectedFile = searchResultList.get(index);
+		String[] info = selectedFile.split(" ");
+		// info[0] == file name
+		//info[1] == file size
 		
-		List<String> ipsAndPorts = getIpsAndPortsOfFile(index);
-		//int parts = fileSize/BLOCK_SIZE; 
-		//int lastpart = fileSize-(BLOCK_SIZE*parts);
+		byte[] file = new byte[Integer.parseInt(info[1])];//accessed by multiple Threads
 		
+		List<String> ipsAndPorts = getIpsAndPortsWhereFileExists(info[0], info[1]);// who i'm going ask for fileBlocks
 		
-		//bq
-		BlockingQueue<FileBlockRequest> blocks = new BlockingQueue<>();
-		//file= new byte[fileSize];
-		for(int i = 0;i<parts;i++) {
-			try {
-				blocks.offer(new FileBlockRequest(fileName, BLOCK_SIZE, BLOCK_SIZE*i));
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-		}
+		FileBloksQueue<FileBlockRequest> fileBlocksQueue = getFileBloksInfo(info[0],Integer.parseInt(info[1]));//accessed by multiple Threads
 		
-		if(lastpart>0) {
-			try {
-				blocks.offer(new FileBlockRequest(fileName, lastpart, BLOCK_SIZE*(parts)));
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-		}
-		//
-		
-		
-		for(int i = 0; i < ipsAndPorts.size(); i++){
-			String user = ipsAndPorts.get(i);
-			String[] userFields = user.split(" ");
-
-			try {
-				//System.out.println("i'm tryng to open a socket whit IP and Port:"+userFields[0]+","+userFields[1]+";");
-				FileRequest dfp = new FileRequest(new Socket(userFields[0], Integer.parseInt(userFields[1])), blocks, file, blocksDownloaded,progressJProgressBar);
-				//i have en error here :(
-				
-				Thread thread = new Thread(dfp);
-				thread.start();
-				
-			} catch (NumberFormatException | IOException e1) {
-				e1.printStackTrace();
-			}
-		}
-		
-		try {
-			Files.write(Paths.get(username+"/" + fileName), file);
-		} catch ( IOException e1) {
-			e1.printStackTrace();
-		}
-		
+		downloadFileBlocks(ipsAndPorts,fileBlocksQueue, file, progressJProgressBar, BLOCK_SIZE* (Integer.parseInt(info[1]) / BLOCK_SIZE),info[0]);		
 	}
-	
-	private List<String> getIpsAndPortsOfFile(int index) {
+
+	private List<String> getIpsAndPortsWhereFileExists(String fileName, String fileSize) {
 		List<String> ipsAndPorts = new ArrayList<String>(); // port + Ip of who had the file
-		
-		String s = searchResultList.get(index);
-		String[] info = s.split(" ");
-		String fileName = info[0];
-		String fileSize = info[1];
-		for(String line:searchResultList) {
+
+		for (String line : searchResultList) {
 			String[] lineInfo = line.split(" ");
-			if(lineInfo[0].equals(fileName) && lineInfo[1].equals(fileSize)) {
-				ipsAndPorts.add(lineInfo[2]+" "+lineInfo[3]);
+			if (lineInfo[0].equals(fileName) && lineInfo[1].equals(fileSize)) {//condition to see if 2 files are the same
+				ipsAndPorts.add(lineInfo[2] + " " + lineInfo[3]);//maybe change this in the future
 			}
 		}
 		return ipsAndPorts;
+	}
+	
+	private FileBloksQueue<FileBlockRequest> getFileBloksInfo(String fileName, int fileSize) {
+		FileBloksQueue<FileBlockRequest> fileBlocksQueue = new FileBloksQueue<FileBlockRequest>();
+		int parts = fileSize / BLOCK_SIZE;// must round down
+		int lastpart = fileSize - (BLOCK_SIZE * parts); // int  type does that round down thing 13.86 -> 13 blocks
+
+		for (int i = 0; i < parts; i++) {
+			fileBlocksQueue.add(new FileBlockRequest(fileName, BLOCK_SIZE, BLOCK_SIZE * i));
+		}
+		if (lastpart > 0) {
+			fileBlocksQueue.add(new FileBlockRequest(fileName, lastpart, BLOCK_SIZE * (parts)));
+		}
+
+		return fileBlocksQueue;
+	}
+	
+	
+	/*
+	 * Barrier:
+	 * all tasks write on the file
+	 * 
+	 * another big boy task has to wait to write the file
+	 * 
+	 */
+	private void downloadFileBlocks(List<String> ipsAndPortsWhereFileExists, FileBloksQueue<FileBlockRequest> fileBlocksQueue, byte[] file,
+			JProgressBar progressJProgressBar, int lastBlockBeginning, String fileName) {
+		int progress = ((1/fileBlocksQueue.getSize())*100);//progress value of each block
+		for (String client:ipsAndPortsWhereFileExists) {// ask all users(witch have the file) for the file blocks
+			Runnable task = new Runnable() {// starting a thread per connection -> kinda good idea
+				@Override
+				public void run() {
+					String[] clientFields = client.split(" ");
+					try {
+						FileRequest fileRequest = new FileRequest(
+								new Socket(clientFields[0], Integer.parseInt(clientFields[1])));
+						fileRequest.requestFileBlocks(fileBlocksQueue, file, progressJProgressBar,progress, lastBlockBeginning);
+					} catch (NumberFormatException | IOException e) {
+						e.printStackTrace();
+					}
+				}
+			};
+			pool.submit(task);
+		}
+		
+		
+		//when is done!
+		try {
+			fileBlocksQueue.waitBlocks();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			Files.write(Paths.get(username + "/" + fileName), file); // 1
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+
 	}
 
 	public static void main(String[] args) {

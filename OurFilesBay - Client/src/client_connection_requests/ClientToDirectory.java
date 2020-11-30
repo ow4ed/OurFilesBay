@@ -47,31 +47,3 @@ public abstract class ClientToDirectory {
 	}
 	
 }
-/*
-public List<String> geIpsAndPortsOfUsersConnected(String userIp, int userPort) { //ConnectionThtread in Directory whit the User will be created
-	doConnections();
-	
-	List<String> connectedUsers = new LinkedList<String>();
-	
-	out.println("CLT");// critical
-	String answerCLT;
-	try {
-		while(!(answerCLT = in.readLine()).equals("END")) {// works as expected!
-			String[] info = answerCLT.split(" ");
-			if (!(userIp.equals(info[1])) || (Integer.parseInt(info[2]) != userPort)) {//conditions to add to the list
-				connectedUsers.add(info[1] + " " + info[2]);
-			}
-		}
-	} catch (IOException e) {
-		e.printStackTrace();
-	} finally {
-		try {
-			socket.close();
-			in.close();
-			out.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	return connectedUsers;
-}*/

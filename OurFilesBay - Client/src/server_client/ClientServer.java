@@ -1,10 +1,10 @@
-package server;
+package server_client;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import coordination_structures.ThreadPool;
+import coordination_structures_client.ThreadPool;
 
 public class ClientServer { ///still thinking about this part
 
