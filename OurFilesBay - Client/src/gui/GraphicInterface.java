@@ -112,7 +112,10 @@ public class GraphicInterface {
 		JProgressBar progressJProgressBar = new JProgressBar();
 		progressJProgressBar.setFont(new Font("Calibri", Font.BOLD, 30));
 		progressJProgressBar.setPreferredSize(new Dimension(175, 80));
+		progressJProgressBar.setString("Click Download");
 		progressJProgressBar.setStringPainted(true);
+		progressJProgressBar.setMinimum(0);
+		progressJProgressBar.setMaximum(10000);//the maxium 
 		progressJProgressBar.setValue(0);
 		downloadJPanel.add(progressJProgressBar, BorderLayout.PAGE_END);
 		

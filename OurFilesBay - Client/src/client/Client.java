@@ -160,6 +160,21 @@ public class Client{
 				userFilesJList.addElement(f.getName()+" ,"+f.length()+" bytes");
 		}
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 
 	public void download(int index, JProgressBar progressJProgressBar) {//accessed by multiple Threads
 		//Runnable download = new Runnable() {  ?
@@ -214,7 +229,8 @@ public class Client{
 	 */
 	private void downloadFileBlocks(List<String> ipsAndPortsWhereFileExists, FileBloksQueue<FileBlockRequest> fileBlocksQueue, byte[] file,
 			JProgressBar progressJProgressBar, int lastBlockBeginning, String fileName) {
-		int progress = ((1/fileBlocksQueue.getSize())*100);//progress value of each block
+		int n =((int) ((1/((double) fileBlocksQueue.getSize()))*10000));//progress value of each block
+		int progress = Integer.parseInt("0"+n);
 		for (String client:ipsAndPortsWhereFileExists) {// ask all users(witch have the file) for the file blocks
 			Runnable task = new Runnable() {// starting a thread per connection -> kinda good idea
 				@Override
@@ -234,6 +250,7 @@ public class Client{
 		
 		
 		//when is done!
+		/*
 		try {
 			fileBlocksQueue.waitBlocks();
 		} catch (InterruptedException e) {
@@ -244,7 +261,7 @@ public class Client{
 			Files.write(Paths.get(username + "/" + fileName), file); // 1
 		} catch (IOException e1) {
 			e1.printStackTrace();
-		}
+		}*/
 
 	}
 
