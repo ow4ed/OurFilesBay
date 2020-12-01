@@ -74,7 +74,7 @@ public class Connection implements Runnable {
 				try {
 					try {//delete, lag simulation
 						System.out.println("SLEEPY WIPPY TIME");
-						Thread.sleep(10000);
+						Thread.sleep(2000);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 					//	e.printStackTrace();
@@ -91,7 +91,8 @@ public class Connection implements Runnable {
 	}
 	
 	private void sendFileBlocks(Object o) {
-		while (o instanceof FileBlockRequest) {//i have an while cycle, is good idea to have a thread pool
+		while ((o instanceof FileBlockRequest) || o!=null) {//i have an while cycle, is good idea to have a thread pool
+			System.out.println(username+" -  Enviei um File Block!");
 			sendFileBlock((FileBlockRequest) o);
 			
 			try {

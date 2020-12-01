@@ -2,7 +2,7 @@ package client_connection_requests;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.List;
+import java.text.NumberFormat;
 
 import javax.swing.JProgressBar;
 
@@ -37,7 +37,22 @@ public class FileRequest extends ClientToClient {
 				}
 				
 				synchronized(progressJProgressBar) {
-					progressJProgressBar.setValue(progressJProgressBar.getValue()+progress);
+					//progress = 454  , max = 10k
+					Thread.sleep(1000);
+					
+					System.out.println(Thread.currentThread().getName()+" - aqui esta o que quero adicionar a progress bar:" + progress);
+					System.out.println(Thread.currentThread().getName()+" - previous progressBar value:" + progressJProgressBar.getValue());
+					
+					int newVal = progress + progressJProgressBar.getValue();
+					int big = newVal/100;//it already rounds down!
+					int small = newVal-(big*100);
+					System.out.println(Thread.currentThread().getName()+" - value i'm tryng to set:"+newVal);
+					
+					//progressJProgressBar.setValue(newVal);
+					//progressJProgressBar.setValue(progressJProgressBar.getValue()+progress);
+					//progressJProgressBar.setString(NumberFormat.getPercentInstance().format(newVal/10));
+					progressJProgressBar.setString(big+"."+small+"%");
+					progressJProgressBar.setValue(newVal);
 				}
 				
 				if(fileBlock.getBeginning() == lastBlockBeginning) {//we actually need this
@@ -48,11 +63,15 @@ public class FileRequest extends ClientToClient {
 				Thread.sleep(100);//simulate lag
 
 			}
+			
+			super.getObjectOutputStream().writeObject(null);//condition to stop the while cycle 
+			//in server connection
+			
 		} catch (InterruptedException | IOException | ClassNotFoundException e) {
 			e.printStackTrace();
-		} //finally {
-			//super.closeConnections();
-	//	}
+		//} finally {
+		//	super.closeConnections();
+		}
 	}
 
 }
