@@ -6,17 +6,17 @@ public class FileBlock implements Serializable{
 
 	private static final long serialVersionUID = -8732561272597480081L;
 	
-	private int beginning;
+	private long beginning;
 	private int size;
 	private byte[] fileBlock;
 
-	public FileBlock(int beginning, int size, byte[] fileBlock) {
+	public FileBlock(long beginning, int size, byte[] fileBlock) {
 		this.beginning = beginning;
 		this.size = size;
 		this.fileBlock = fileBlock;
 	}
 
-	public int getBeginning() {
+	public long getBeginning() {
 		return beginning;
 	}
 

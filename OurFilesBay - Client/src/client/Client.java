@@ -1,11 +1,13 @@
 package client;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +55,7 @@ public class Client{
 	private List<String> searchResultList = new ArrayList<String>();
 	
 	private final static int BLOCK_SIZE = 1024;
+	private final static int QUEUE_SIZE = 100000;
 	
 	public Client(String username, int portUser,String inetAddressDirectory, int portDirectory,int nCoresToUse) {
 		this.username = username;
@@ -160,39 +163,48 @@ public class Client{
 				userFilesJList.addElement(f.getName()+" ,"+f.length()+" bytes");
 		}
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 
 	public void download(int index, JProgressBar progressJProgressBar) {//accessed by multiple Threads
-		//Runnable download = new Runnable() {  ?
-		String selectedFile = searchResultList.get(index);
-		String[] info = selectedFile.split(" ");
-		// info[0] == file name
-		//info[1] == file size
-		
-		byte[] file = new byte[Integer.parseInt(info[1])];//accessed by multiple Threads
-		
-		List<String> ipsAndPorts = getIpsAndPortsWhereFileExists(info[0], info[1]);// who i'm going ask for fileBlocks
-		
-		FileBloksQueue<FileBlockRequest> fileBlocksQueue = getFileBloksInfo(info[0],Integer.parseInt(info[1]));//accessed by multiple Threads
-		
-		downloadFileBlocks(ipsAndPorts,fileBlocksQueue, file, progressJProgressBar, BLOCK_SIZE* (Integer.parseInt(info[1]) / BLOCK_SIZE),info[0]);		
+		Runnable download = new Runnable() {
+			@Override
+			public void run() {
+				String selectedFile = searchResultList.get(index);
+				String[] info = selectedFile.split(" ");
+				// info[0] == file name
+				// info[1] == file size
+
+			//	byte[] file = new byte[Integer.parseInt(info[1])];// accessed by multiple Threads
+
+				List<String> ipsAndPorts = getIpsAndPortsWhereFileExists(info[0], info[1]);// who i'm going ask for
+																							// fileBlocks
+
+				//have multiple of those!
+			//	int numberOfQueues = (int) (Long.parseLong(info[1])/QUEUE_SIZE);//queueMaxSize = 100k
+			//	int lastQueue = (int) (Long.parseLong(info[1])%QUEUE_SIZE);
+				//this way i can manage the total memory spend for very large files
+				
+				
+				
+				//i have to limit the size of this ?
+				//for very big files yes! (> 500 GB ? )
+				
+				
+				try {
+					downloadFileBlocks(ipsAndPorts, progressJProgressBar,
+							BLOCK_SIZE *((int) (Long.parseLong(info[1]) / BLOCK_SIZE)), info);
+				} catch (NumberFormatException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		pool.submit((download));
 	}
 
-	private List<String> getIpsAndPortsWhereFileExists(String fileName, String fileSize) {
+	private List<String> getIpsAndPortsWhereFileExists(String fileName, String fileSize) {//String string, good ideia
 		List<String> ipsAndPorts = new ArrayList<String>(); // port + Ip of who had the file
 
 		for (String line : searchResultList) {
@@ -204,17 +216,25 @@ public class Client{
 		return ipsAndPorts;
 	}
 	
-	private FileBloksQueue<FileBlockRequest> getFileBloksInfo(String fileName, int fileSize) {
+	private FileBloksQueue<FileBlockRequest> getFileBloksInfo(String[] info, int numberOfBlocks, long beginning) {
 		FileBloksQueue<FileBlockRequest> fileBlocksQueue = new FileBloksQueue<FileBlockRequest>();
-		int parts = fileSize / BLOCK_SIZE;// must round down
-		int lastpart = fileSize - (BLOCK_SIZE * parts); // int  type does that round down thing 13.86 -> 13 blocks
-
-		for (int i = 0; i < parts; i++) {
-			fileBlocksQueue.add(new FileBlockRequest(fileName, BLOCK_SIZE, BLOCK_SIZE * i));
+		long lastPartSize = Long.parseLong(info[1]) -
+				( beginning  +      
+						((long) BLOCK_SIZE * (numberOfBlocks-1)));
+			
+				  
+                           
+		for (int i = 0; i < numberOfBlocks-1; i++) {//not including last block
+			fileBlocksQueue.add(new FileBlockRequest(info[0], BLOCK_SIZE,beginning+((long) BLOCK_SIZE * i)));//file begining
 		}
-		if (lastpart > 0) {
-			fileBlocksQueue.add(new FileBlockRequest(fileName, lastpart, BLOCK_SIZE * (parts)));
+		
+ 		if (lastPartSize < BLOCK_SIZE) {
+			fileBlocksQueue.add(new FileBlockRequest(info[0],(int) lastPartSize,(beginning+((long) BLOCK_SIZE * (numberOfBlocks-1)))));
 		}
+		else {
+			fileBlocksQueue.add(new FileBlockRequest(info[0], BLOCK_SIZE,beginning+((long) BLOCK_SIZE * (numberOfBlocks-1))));
+		}
+		
 
 		return fileBlocksQueue;
 	}
@@ -225,44 +245,73 @@ public class Client{
 	 * all tasks write on the file
 	 * 
 	 * another big boy task has to wait to write the file
-	 * 
+	 * 32 049 152
 	 */
-	private void downloadFileBlocks(List<String> ipsAndPortsWhereFileExists, FileBloksQueue<FileBlockRequest> fileBlocksQueue, byte[] file,
-			JProgressBar progressJProgressBar, int lastBlockBeginning, String fileName) {
-		int n =((int) ((1/((double) fileBlocksQueue.getSize()))*10000));//progress value of each block
-		int progress = Integer.parseInt("0"+n);
-		for (String client:ipsAndPortsWhereFileExists) {// ask all users(witch have the file) for the file blocks
-			Runnable task = new Runnable() {// starting a thread per connection -> kinda good idea
-				@Override
-				public void run() {
-					String[] clientFields = client.split(" ");
-					try {
-						FileRequest fileRequest = new FileRequest(
-								new Socket(clientFields[0], Integer.parseInt(clientFields[1])));
-						fileRequest.requestFileBlocks(fileBlocksQueue, file, progressJProgressBar,progress, lastBlockBeginning);
-					} catch (NumberFormatException | IOException e) {
-						e.printStackTrace();
-					}
-				}
-			};
-			pool.submit(task);
-		}
+	private void downloadFileBlocks(List<String> ipsAndPortsWhereFileExists,
+			JProgressBar progressJProgressBar, int lastBlockBeginning, String[] info) throws IOException {
 		
-		
-		//when is done!
-		/*
-		try {
-			fileBlocksQueue.waitBlocks();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		
-		try {
-			Files.write(Paths.get(username + "/" + fileName), file); // 1
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}*/
+		long numberOfBlocks = Long.parseLong(info[1]) / BLOCK_SIZE;// must round down    31 298,73642 -> 31298
 
+		if((Long.parseLong(info[1]) % BLOCK_SIZE)>0) {
+			numberOfBlocks = numberOfBlocks +1 ;
+		}
+		
+		
+		
+		
+		
+		int size = QUEUE_SIZE;
+		long beginning = 0;
+		while (numberOfBlocks>0) {// lastQueue included
+			if(numberOfBlocks<QUEUE_SIZE)
+				size = (int) numberOfBlocks;
+			
+			FileBloksQueue<FileBlockRequest> fileBlocksQueue = getFileBloksInfo(info, size, beginning);// accessed
+			
+			beginning = beginning + ((int)(QUEUE_SIZE*BLOCK_SIZE));
+		
+																													// multiple
+																													// Threads
+
+			int progress = ((int) ((1 / ((double) fileBlocksQueue.getSize())) * 10000000));// progress value of each
+																							// block
+			File f = new File(
+					"C:\\Users\\L3g4c\\git\\OurFilesBay\\OurFilesBay - Client\\" + username + "\\" + info[0]);
+			for (String client : ipsAndPortsWhereFileExists) {// ask all users(witch have the file) for the file blocks
+				Runnable task = new Runnable() {// starting a thread per connection -> kinda good idea
+					@Override
+					public void run() {
+						String[] clientFields = client.split(" ");
+						try {
+							FileRequest fileRequest = new FileRequest(
+									new Socket(clientFields[0], Integer.parseInt(clientFields[1])));
+							fileRequest.requestFileBlocks(fileBlocksQueue, f, progressJProgressBar, progress,
+									lastBlockBeginning);
+						} catch (NumberFormatException | IOException e) {
+							e.printStackTrace();
+						}
+					}
+				};
+				pool.submit(task);
+			}
+
+			// when is done!
+
+			try {
+				fileBlocksQueue.waitBlocks(); // 1 queue at the time!!!
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			numberOfBlocks = numberOfBlocks-QUEUE_SIZE;
+
+		}
+		
+		
+		
+		updateUserFilesJList();
+		
+		
 	}
 
 	public static void main(String[] args) {

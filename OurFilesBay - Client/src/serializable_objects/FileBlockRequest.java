@@ -8,9 +8,9 @@ public class FileBlockRequest implements Serializable{
 	
 	private String fileName;//used for file identification 
 	private int size;//used for file identification 
-	private int beginning;
+	private long beginning;
 	
-	public FileBlockRequest(String fileName, int size, int beginning){
+	public FileBlockRequest(String fileName, int size, long beginning){
 		this.fileName = fileName;
 		this.size = size;
 		this.beginning = beginning;
@@ -24,7 +24,7 @@ public class FileBlockRequest implements Serializable{
 		return size;
 	}
 
-	public int getBeginning() {
+	public long getBeginning() {
 		return beginning;
 	}
 
