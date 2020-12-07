@@ -20,7 +20,7 @@ public class FileBloksQueue <E>{
 		this.queue = new ArrayDeque<>();
 	}
 	
-	public int getSize() {
+	public synchronized int getSize() {
 		return queue.size();
 	}
 	
@@ -41,9 +41,17 @@ public class FileBloksQueue <E>{
 		}
 	}
 	
+	public void resetWaitBlocks() {
+		allBlocksAreAvailable = false;
+	}
+	
 	public synchronized void Done() {//only 1 Thread operating here
 		allBlocksAreAvailable = true;
 		notifyAll();//more threads can be sleeping
+	}
+
+	public void clear() {
+		queue.clear();		
 	}
 
 }

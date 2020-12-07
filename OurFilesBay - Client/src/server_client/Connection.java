@@ -3,18 +3,12 @@ package server_client;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import coordination_structures_client.ThreadPool;
 import serializable_objects.FileBlockRequest;
@@ -28,11 +22,13 @@ public class Connection implements Runnable {
 	private ObjectInputStream objectInputStream = null;
 	private ThreadPool pool;
 	private String username;
+	private String path;
 
-	public Connection(Socket socket,ThreadPool pool, String username) {
+	public Connection(Socket socket,ThreadPool pool, String username, String path) {
 		this.socket = socket;
 		this.pool = pool;
 		this.username = username;
+		this.path = path;
 	}
 	
 	@Override
@@ -118,7 +114,7 @@ public class Connection implements Runnable {
 			public void run() {
 				try {//it dosen't look optimal but is what i want, i want to actually check if i'm sending the right block, imagine the client deletes the file
 					FileBlock fileBlock = new FileBlock(fileBlockRequest.getBeginning(),fileBlockRequest.getSize(),
-							copyBytesToArray(new File("C:\\Users\\L3g4c\\git\\OurFilesBay\\OurFilesBay - Client\\"+username+"\\"+fileBlockRequest.getFileName()),fileBlockRequest.getSize(),fileBlockRequest.getBeginning()));
+							copyBytesToArray(new File(path+fileBlockRequest.getFileName()),fileBlockRequest.getSize(),fileBlockRequest.getBeginning()));
 					objectOutputStream.writeObject(fileBlock);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -129,7 +125,7 @@ public class Connection implements Runnable {
 	}
 	
 	private File[] findFiles(String keyword) {// need to thing about, where to place this method
-		File[] files = new File(username).listFiles(new FileFilter() {//needs to be changed 
+		File[] files = new File(path).listFiles(new FileFilter() {//needs to be changed 
 			public boolean accept(File f) {
 				return f.getName().contains(keyword);
 			}
@@ -139,7 +135,7 @@ public class Connection implements Runnable {
 	
 	public byte[] copyBytesToArray(File file,int blockSize, long blockBeginning) throws IOException {
 
-		RandomAccessFile aFile = new RandomAccessFile(file, "rw");
+		RandomAccessFile aFile = new RandomAccessFile(file, "r");
 		FileChannel inChannel = aFile.getChannel();
 		ByteBuffer buf = ByteBuffer.allocate(blockSize);
 		buf.clear();
@@ -153,8 +149,6 @@ public class Connection implements Runnable {
 		inChannel.close();
 		aFile.close();
 		return arr;
-
-
 	}
     
 }
