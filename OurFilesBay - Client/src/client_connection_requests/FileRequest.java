@@ -20,26 +20,26 @@ public class FileRequest extends ClientToClient {
 
 	}
 
-	public void requestFileBlocks(FileBloksQueue<FileBlockRequest> fileBlocksQueue, File file, JProgressBar progressJProgressBar, int progress, int lastBlockBeginning) {//blocks isn't thread safe right now
+	public void requestFileBlocks(FileBloksQueue<FileBlockRequest> fileBlocksQueue, File file, JProgressBar progressJProgressBar, int progress, long lastBlockBeginning) {//blocks isn't thread safe right now
 		super.doConnections();
 		try {
 			
+			byte[] block;
+			FileBlock fileBlock;
 			FileBlockRequest fileBlockRequest;
 			while ((fileBlockRequest = fileBlocksQueue.take()) != null) {//persistent connection
-				Thread.sleep(10);//simulate lag
+			//	Thread.sleep(10);//simulate lag
 				super.getObjectOutputStream().writeObject(fileBlockRequest);
 				
-				FileBlock fileBlock = (FileBlock) super.getObjectInputStream().readObject();
+				fileBlock = (FileBlock) super.getObjectInputStream().readObject();
 				
-				byte[] block = fileBlock.getFileBlock();
+				block = fileBlock.getFileBlock();
 	
 				synchronized (file) {
 					writeBytesArrayToFile(file,block,fileBlock.getBeginning());
 				}
 				
 				synchronized(progressJProgressBar) {
-			
-					
 					int newVal = progress + progressJProgressBar.getValue();
 					int big = newVal/100000;//it already rounds down!
 					int small = newVal-(big*100000);
@@ -48,20 +48,26 @@ public class FileRequest extends ClientToClient {
 					progressJProgressBar.setValue(newVal);
 				}
 				
-				if(fileBlock.getBeginning() == lastBlockBeginning) {//we actually need this
-					fileBlocksQueue.Done();//guy needs to update files in user folder!
-					progressJProgressBar.setString(0+"%");
-					progressJProgressBar.setValue(0);
+				
+				if(fileBlocksQueue.getSize() == 0){// is already sync method 
+					fileBlocksQueue.Done();//queue is empty
 				}
 				
+				if(fileBlock.getBeginning() == lastBlockBeginning) {//we actually need this //only 1 thread enters this if statement
+						progressJProgressBar.setString(100+"%");//visual update
+						progressJProgressBar.setString(0+"%");
+						progressJProgressBar.setValue(0);
+						System.out.println("@Is donee");
+				}
 
+				
 
 			}
 			
 			super.getObjectOutputStream().writeObject(null);//condition to stop the while cycle 
 			//in server connection
 			
-		} catch (InterruptedException | IOException | ClassNotFoundException e) {
+		} catch (/*InterruptedException |*/ IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		} finally {
 			super.closeConnections();
@@ -69,8 +75,9 @@ public class FileRequest extends ClientToClient {
 	}
 
 		       		       
-	public void writeBytesArrayToFile(File file, byte[] data, long off) throws IOException {
-		RandomAccessFile aFile = new RandomAccessFile(file, "rw");
+	public void writeBytesArrayToFile(File f, byte[] data, long off) throws IOException {
+		
+		RandomAccessFile aFile = new RandomAccessFile(f, "rw");
 		FileChannel ch = aFile.getChannel();
 		
 		ByteBuffer byteBuffer = ByteBuffer.allocate(data.length);		
@@ -83,28 +90,11 @@ public class FileRequest extends ClientToClient {
 			ch.write(byteBuffer);
 		}
 
+
 		ch.close();
 		aFile.close();
 
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
 }

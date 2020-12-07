@@ -3,6 +3,7 @@ package server_client;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Path;
 
 import coordination_structures_client.ThreadPool;
 
@@ -12,11 +13,13 @@ public class ClientServer { ///still thinking about this part
 	private ServerSocket serverSocket = null;
 	private String username;
 	private ThreadPool pool;
+	private String path;
 
-	public ClientServer(int port, String username, ThreadPool pool) {
+	public ClientServer(int port, String username, ThreadPool pool, String path) {
 		this.port = port;
 		this.username = username;
 		this.pool = pool; 
+		this.path = path;
 	}
 
 	public void startServing() {
@@ -42,7 +45,7 @@ public class ClientServer { ///still thinking about this part
 			System.out.println(username + " - server in standbay...");
 			try {
 				Socket clientSocket = serverSocket.accept();
-				Connection connection = new Connection(clientSocket, pool, username);
+				Connection connection = new Connection(clientSocket, pool, username, path);
 				System.out.println(username + " - conection thread created: " + clientSocket);
 				pool.submit(connection);
 			} catch (IOException e) {
