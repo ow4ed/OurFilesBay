@@ -94,35 +94,72 @@ public class Connection implements Runnable {
 		pool.submit(task);
 	}
 	
-	private void sendFileBlocks(Object o) {
-		while ((o instanceof FileBlockRequest) || o!=null) {//i have an while cycle, is good idea to have a thread pool
-			System.out.println(username+" -  Enviei um File Block!");
-			sendFileBlock((FileBlockRequest) o);
-			
-			try {
-				o = objectInputStream.readObject();//while "iterator" 
-			} catch (ClassNotFoundException | IOException e) {
-				e.printStackTrace();
+	private void sendFileBlocks(FileBlockRequest o) {
+		int initialBlockSize = o.getSize();
+		
+		FileBlock fileBlock = new FileBlock();
+		
+		byte[] data = new byte[initialBlockSize];//in large files 99% of the blocks will have that size 
+		
+		try {
+			RandomAccessFile aFile = new RandomAccessFile(path+o.getFileName(), "r");
+			FileChannel inChannel = aFile.getChannel();
+			ByteBuffer buf = ByteBuffer.allocate(initialBlockSize);
+			while ((o instanceof FileBlockRequest) || o!=null) {//i have an while cycle, is good idea to have a thread pool
+				//System.out.println(username+" -  Enviei um File Block!");
+				
+				
+				int blockSize = o.getSize();
+				if(initialBlockSize!= blockSize) {//last block may have a different size
+					data = new byte[blockSize];
+					buf = ByteBuffer.allocate(blockSize);
+					initialBlockSize = blockSize;
+				}
+				
+				long beginning = o.getBeginning();
+				copyBytesToArray(buf,inChannel,beginning,data,initialBlockSize);
+
+				
+				fileBlock.setData(beginning,initialBlockSize ,data);
+				
+				try {
+					objectOutputStream.writeObject(fileBlock);
+					objectOutputStream.reset();//i'm sending the same object but modifyed!
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+				try {
+					o = (FileBlockRequest) objectInputStream.readObject();//while "iterator" 
+				} catch (ClassNotFoundException | IOException e) {
+					e.printStackTrace();
+				}
 			}
+		
+			inChannel.close();
+			aFile.close();
+		
+			closeConnections();//my only persistent connection!(careful when i close it on the other side)
+		} catch (IOException e2) {
+			e2.printStackTrace();
+		}//fine, because if is requested more fileBlocks from diferent file from the same user, another connection is open
+		
+	}
+	public void copyBytesToArray(ByteBuffer buf,FileChannel inChannel, long blockBeginning, byte[] dest, int size) {
+		buf.clear();
+		
+		try {
+			inChannel.position(blockBeginning);
+			inChannel.read(buf);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		closeConnections();//my only persistent connection!(careful when i close it on the other side)
+		
+		System.arraycopy(buf.array(), 0, dest, 0, size);
 	}
 	
-	private void sendFileBlock(FileBlockRequest fileBlockRequest) {
-		Runnable task = new Runnable() {//imagine 100 connection threads, doing a while cycle at the same time
-			@Override
-			public void run() {
-				try {//it dosen't look optimal but is what i want, i want to actually check if i'm sending the right block, imagine the client deletes the file
-					FileBlock fileBlock = new FileBlock(fileBlockRequest.getBeginning(),fileBlockRequest.getSize(),
-							copyBytesToArray(new File(path+fileBlockRequest.getFileName()),fileBlockRequest.getSize(),fileBlockRequest.getBeginning()));
-					objectOutputStream.writeObject(fileBlock);
-				} catch (IOException e) {
-					e.printStackTrace();
-				} 
-			}
-		};
-		pool.submit(task);
-	}
+	
 	
 	private File[] findFiles(String keyword) {// need to thing about, where to place this method
 		File[] files = new File(path).listFiles(new FileFilter() {//needs to be changed 
@@ -131,24 +168,6 @@ public class Connection implements Runnable {
 			}
 		});
 		return files;
-	}
-	
-	public byte[] copyBytesToArray(File file,int blockSize, long blockBeginning) throws IOException {
-
-		RandomAccessFile aFile = new RandomAccessFile(file, "r");
-		FileChannel inChannel = aFile.getChannel();
-		ByteBuffer buf = ByteBuffer.allocate(blockSize);
-		buf.clear();
-		
-		inChannel.position(blockBeginning);
-		inChannel.read(buf);
-		
-		byte[] arr = new byte[blockSize];
-		System.arraycopy(buf.array(), 0, arr, 0, blockSize);
-			
-		inChannel.close();
-		aFile.close();
-		return arr;
 	}
     
 }

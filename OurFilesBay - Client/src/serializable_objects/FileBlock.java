@@ -10,12 +10,22 @@ public class FileBlock implements Serializable{
 	private int size;
 	private byte[] fileBlock;
 
+	/*
 	public FileBlock(long beginning, int size, byte[] fileBlock) {
 		this.beginning = beginning;
 		this.size = size;
 		this.fileBlock = fileBlock;
 	}
+	*/
+	public FileBlock() {
+	}
 
+	public void setData(long beginning, int size, byte[] fileBlock) {
+		this.beginning = beginning;
+		this.size = size;
+		this.fileBlock = fileBlock;
+	}
+	
 	public long getBeginning() {
 		return beginning;
 	}
