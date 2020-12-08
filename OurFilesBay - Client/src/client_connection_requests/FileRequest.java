@@ -24,25 +24,43 @@ public class FileRequest extends ClientToClient {
 		super.doConnections();
 		try {
 			
-			byte[] block;
+			int newVal;
+			int big;
+			int small;
+			
+			byte[] blockData;
 			FileBlock fileBlock;
 			FileBlockRequest fileBlockRequest;
+			
 			while ((fileBlockRequest = fileBlocksQueue.take()) != null) {//persistent connection
 			//	Thread.sleep(10);//simulate lag
 				super.getObjectOutputStream().writeObject(fileBlockRequest);
 				
 				fileBlock = (FileBlock) super.getObjectInputStream().readObject();
+				//
 				
-				block = fileBlock.getFileBlock();
-	
+				
+				blockData = fileBlock.getFileBlock();
+				
 				synchronized (file) {
-					writeBytesArrayToFile(file,block,fileBlock.getBeginning());
+					writeBytesArrayToFile(file,blockData,fileBlock.getBeginning());
 				}
 				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				////
 				synchronized(progressJProgressBar) {
-					int newVal = progress + progressJProgressBar.getValue();
-					int big = newVal/100000;//it already rounds down!
-					int small = newVal-(big*100000);
+					newVal = progress + progressJProgressBar.getValue();
+					big = newVal/100000;//it already rounds down!
+					small = newVal-(big*100000);
 
 					progressJProgressBar.setString(big+"."+small+"%");
 					progressJProgressBar.setValue(newVal);
@@ -58,6 +76,7 @@ public class FileRequest extends ClientToClient {
 						progressJProgressBar.setString(0+"%");
 						progressJProgressBar.setValue(0);
 						System.out.println("@Is donee");
+						System.out.println("last block beginning was:"+lastBlockBeginning);
 				}
 
 				
@@ -81,6 +100,7 @@ public class FileRequest extends ClientToClient {
 		FileChannel ch = aFile.getChannel();
 		
 		ByteBuffer byteBuffer = ByteBuffer.allocate(data.length);		
+		
 		byteBuffer.clear();
 		byteBuffer.put(data);
 		byteBuffer.flip();

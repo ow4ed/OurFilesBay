@@ -54,7 +54,7 @@ public class Client{
 	//BLOCK_SIZE*QUEUE_SIZE = +/- max memory usage ? 
 	
 	private final static int BLOCK_SIZE = 1024000;// * = 1 GB 
-	private final static int QUEUE_SIZE = 1000;
+	private final static int QUEUE_SIZE = 100000;
 //	private final static int BLOCK_SIZE = 1024; 
 //	private final static int QUEUE_SIZE = 1000;
 	
@@ -238,11 +238,12 @@ public class Client{
 	
 	
 	/*
-	 * Barrier:
-	 * all tasks write on the file
+	 * I access the same file to send blocks to multiple users
 	 * 
-	 * another big boy task has to wait to write the file
-	 * 32 049 152
+	 * But when i try to access the file whit windows explorer, to see its properties for example
+	 *  - in users directory that are downloading it, i get an error// need to hide the file or make it inaccessible ?
+	 *  - in the user witch is sending the blocks , (haven't been tested); 
+
 	 */
 	private void downloadFileBlocks(List<String> ipsAndPortsWhereFileExists,
 			JProgressBar progressJProgressBar, long lastBlockBeginning, String[] info) throws IOException {
@@ -270,8 +271,6 @@ public class Client{
 			
 			getFileBloksInfo(fileBlocksQueue,info, size, beginning);//avoid large memory usage for large files
 
-			
-			System.out.println("here is its size:"+fileBlocksQueue.getSize());
 			
 			//
 			for (String client : ipsAndPortsWhereFileExists) {// ask all users(witch have the file) for the file blocks
