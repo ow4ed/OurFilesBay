@@ -19,7 +19,7 @@ import client.models.requests.FileBlockRequest;
 import client.models.requests.FileRequest;
 import client.models.requests.IpsAndPortsOfUsersConnectedRequest;
 import client.models.requests.SearchRequest;
-import client.models.requests.SignUpUserRequest;
+import client.models.requests.SignupRequest;
 import client.models.responses.UserFilesDetails;
 import client.models.responses.SearchResponse;
 import client.server.Server;
@@ -101,7 +101,7 @@ public class Client{
 	
 	public void signUp() {//first thing needed to be done, method is a priority when user launches the program
 		try {//if this method sucess i hav
-			SignUpUserRequest clientToDirectory = new SignUpUserRequest(new Socket(directoryIp, this.directoryPort));
+			SignupRequest clientToDirectory = new SignupRequest(new Socket(directoryIp, this.directoryPort));
 			if (clientToDirectory.signUpUser("INSC " + username + " " + userIp.getHostAddress() + " " + userPort)) {
 				Server server = new Server(userPort, username, pool, getPath());
 				server.startServing();

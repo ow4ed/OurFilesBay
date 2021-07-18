@@ -2,7 +2,7 @@ package client.models.responses;
 
 import java.io.Serializable;
 
-public class FileBlock implements Serializable{ 
+public class FileBlockResponse implements Serializable{ 
 
 	private static final long serialVersionUID = -8732561272597480081L;
 	
@@ -10,7 +10,7 @@ public class FileBlock implements Serializable{
 	private int size;
 	private byte[] fileBlock;
 
-	public FileBlock(long beginning, int size, byte[] fileBlock) {
+	public FileBlockResponse(long beginning, int size, byte[] fileBlock) {
 		this.beginning = beginning;
 		this.size = size;
 		this.fileBlock = fileBlock;

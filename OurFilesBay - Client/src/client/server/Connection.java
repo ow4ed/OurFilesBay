@@ -13,7 +13,7 @@ import java.nio.channels.FileChannel;
 
 import client.models.requests.FileBlockRequest;
 import client.models.requests.SearchRequest;
-import client.models.responses.FileBlock;
+import client.models.responses.FileBlockResponse;
 import client.models.responses.UserFilesDetails;
 
 public class Connection implements Runnable {
@@ -137,7 +137,7 @@ public class Connection implements Runnable {
 			System.arraycopy(buf.array(), 0, data, 0, blockSize);
 
 			// generate response object
-			FileBlock fileBlock = new FileBlock(beginning, blockSize, data);
+			FileBlockResponse fileBlock = new FileBlockResponse(beginning, blockSize, data);
 
 			// send response
 			out.writeObject(fileBlock);

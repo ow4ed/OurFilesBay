@@ -10,9 +10,9 @@ import java.nio.channels.FileChannel;
 import javax.swing.JProgressBar;
 
 import client.models.coordination.FileBloksQueue;
-import client.models.responses.FileBlock;
+import client.models.responses.FileBlockResponse;
 
-public class FileRequest extends ClientToClient {
+public class FileRequest extends RequestBase {
 	
 	public FileRequest(Socket socket) {
 		super(socket);
@@ -28,14 +28,14 @@ public class FileRequest extends ClientToClient {
 			int small;
 			
 			byte[] blockData;
-			FileBlock fileBlock;
+			FileBlockResponse fileBlock;
 			FileBlockRequest fileBlockRequest;
 			
 			while ((fileBlockRequest = fileBlocksQueue.take()) != null) {//persistent connection
 			//	Thread.sleep(10);//simulate lag
 				super.getObjectOutputStream().writeObject(fileBlockRequest);
 				
-				fileBlock = (FileBlock) super.getObjectInputStream().readObject();
+				fileBlock = (FileBlockResponse) super.getObjectInputStream().readObject();
 				//
 				
 				

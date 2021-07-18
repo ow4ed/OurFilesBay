@@ -3,9 +3,9 @@ package client.models.responses;
 import java.io.IOException;
 import java.net.Socket;
 
-import client.models.requests.ClientToClient;
+import client.models.requests.RequestBase;
 
-public class SearchResponse extends ClientToClient {
+public class SearchResponse extends RequestBase {
 	
 	public SearchResponse(Socket socket) {
 		super(socket);

@@ -5,13 +5,13 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-public abstract class ClientToClient {
+public abstract class RequestBase {
 	
 	private Socket socket = null;
 	private ObjectOutputStream objectOutputStream = null;
 	private ObjectInputStream objectInputStream = null;
 
-	public ClientToClient(Socket socket) {
+	public RequestBase(Socket socket) {
 		this.socket = socket;
 	}
 	

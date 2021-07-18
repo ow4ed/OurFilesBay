@@ -3,9 +3,9 @@ package client.models.requests;
 import java.io.IOException;
 import java.net.Socket;
 
-public class SignUpUserRequest extends ClientToDirectory{
+public class SignupRequest extends ClientToDirectory{
 	
-	public SignUpUserRequest(Socket socket) {
+	public SignupRequest(Socket socket) {
 		super(socket);
 		
 	}

@@ -54,6 +54,7 @@ public class Server implements Runnable{
 			try {
 				// stop
 				serverSocket.close();
+				pool.shutDown();
 			} catch (IOException e2) {
 				e2.printStackTrace();
 			}
