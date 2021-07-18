@@ -1,15 +1,13 @@
+/*
+ * Used in ThreadPool
+ * 
+ */
 package directory.models;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-public class BlockingQueue<E> {// designed to be accessed by multiple Threads
-	/*
-	 * Used in ThreadPool
-	 * 
-	 * In this package methods can throw exceptions
-	 * 
-	 */
+public class BlockingQueue<E> {
 
 	private Queue<E> queue;
 
@@ -18,16 +16,19 @@ public class BlockingQueue<E> {// designed to be accessed by multiple Threads
 	}
 
 	public synchronized void offer(E e) throws InterruptedException {
+		
 		queue.add(e);
-		notify();//only threads from threadPool will be in wait
+		notify();
 	}
 
-	public synchronized E take() throws InterruptedException {// removes the head of queue
+	public synchronized E take() throws InterruptedException {
+		
 		while (queue.isEmpty()) {
 			wait();
 		}
-		E e = queue.remove();// remove method retrieves and removes
-
+		// removes and retrieves the head of queue
+		E e = queue.remove();
+		
 		return e;
 	}
 

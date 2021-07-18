@@ -29,7 +29,7 @@ public class GraphicInterface {
 	private JFrame frame;
 	private File backgroundImage;
 	
-	public GraphicInterface(Client user) {//have a gui as an attribute on User would be useless
+	public GraphicInterface(Client user) {
 		this.backgroundImage = getBackgroundImage(System.getProperty("user.dir"),"gui_img"); 
 	
 		this.user = user;
@@ -38,7 +38,8 @@ public class GraphicInterface {
 		this.frame = new JFrame("Our Files - " + user.getUsername());
 		this.frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		this.frame.setLayout(new BorderLayout());
-		this.frame.setSize(600, 850);//frame.pack();? not tested on other computers
+		//frame.pack();? not tested on other computers
+		this.frame.setSize(600, 850);
 		
 		addContentToFrame();
 		open();
@@ -52,7 +53,7 @@ public class GraphicInterface {
 	}
 	
 	private void addContentToFrame() {
-		JLabel  imageJLabel = new JLabel();
+		JLabel imageJLabel = new JLabel();
 		imageJLabel.setHorizontalAlignment(JLabel.CENTER);
 		imageJLabel.setIcon(new ImageIcon(backgroundImage.getName()));
 		
@@ -69,12 +70,13 @@ public class GraphicInterface {
 		searchJButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println(user.getUsername()+" - tryed to perform Search action, Search Message:"+ searchJTextField.getText());
-				if(!searchJTextField.getText().isEmpty()) {//don't search if there is no input from user					
-					user.updateSearchResult(searchJTextField.getText());//list that displays search results  
+				//don't search if there is no input from user
+				if(!searchJTextField.getText().isEmpty()) {				
+					//list that displays search results
+					user.updateSearchResult(searchJTextField.getText());  
 				}
 				System.out.println(user.getUsername()+" - has performed Search action");
 				//user.updateUserFilesJList();//update every time user clicks the search button
-				//nah, batter have a button or something else 
 			}
 		});
 		searchJPanel.add(searchJButton, BorderLayout.LINE_END);
@@ -86,7 +88,7 @@ public class GraphicInterface {
 	    searchJPanel.add(searchJLabel, BorderLayout.SOUTH);
 		
 		frame.add(searchJPanel, BorderLayout.CENTER);
-		//above is the code about search Panel   /\  (JextField/input String + Search Button + "Search Result:" Label)
+		// ^ above is the code about search Panel (JextField/input String + Search Button + "Search Result:" Label)
 		
 		JPanel searchResultListAndDownloadPlusUserFilesJPanel= new JPanel(new BorderLayout());
 		
@@ -94,7 +96,7 @@ public class GraphicInterface {
 	
 		JList<String> searchResultJList = new JList<String>(user.getSearchResultJList());
 		searchResultJList.setFont(new Font("Calibri", Font.BOLD, 20));
-		searchResultJList.addListSelectionListener(new ListSelectionListener() {// only for the sysout interaction
+		searchResultJList.addListSelectionListener(new ListSelectionListener() {
 			private int previous = -1;
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
@@ -115,7 +117,7 @@ public class GraphicInterface {
 		//progressJProgressBar.setString("Click Download");
 		progressJProgressBar.setStringPainted(true);
 		progressJProgressBar.setMinimum(0);
-		progressJProgressBar.setMaximum(10000000);//the maxium 
+		progressJProgressBar.setMaximum(10000000);
 		progressJProgressBar.setValue(0);
 		downloadJPanel.add(progressJProgressBar, BorderLayout.PAGE_END);
 		
@@ -134,7 +136,7 @@ public class GraphicInterface {
 		searchResultListAndDownloadJPanel.add(downloadJPanel, BorderLayout.EAST);
 		
 		searchResultListAndDownloadPlusUserFilesJPanel.add(searchResultListAndDownloadJPanel, BorderLayout.NORTH);
-		//above is code about the files list and download /\ (Search Result List + Download Button + Progressbar)
+		// ^ above is code about the files list and download (Search Result List + Download Button + Progressbar)
 		
 		JPanel userFilesJPanel = new JPanel(new BorderLayout());
 		
@@ -146,7 +148,7 @@ public class GraphicInterface {
 		
 		JList<String> userFilesJList = new JList<String>(user.getUserFilesJList());
 		userFilesJList.setFont(new Font("Calibri", Font.BOLD, 20));
-		userFilesJList.addListSelectionListener(new ListSelectionListener() {// only for the sysout interaction
+		userFilesJList.addListSelectionListener(new ListSelectionListener() {
 			private int previous = -1;
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
@@ -161,7 +163,7 @@ public class GraphicInterface {
 		userFilesJPanel.add(userFilesJScrollPane, BorderLayout.SOUTH);
 		
 		searchResultListAndDownloadPlusUserFilesJPanel.add(userFilesJPanel, BorderLayout.SOUTH);
-		//above is the code about the user files list /\ (user files list+ JLabel)
+		// ^ above is the code about the user files list (user files list+ JLabel)
 		
 		frame.add(searchResultListAndDownloadPlusUserFilesJPanel, BorderLayout.SOUTH);
 	}
@@ -179,7 +181,7 @@ public class GraphicInterface {
 	/*
 	frame.addWindowListener(new WindowAdapter(){
         public void windowClosing(WindowEvent e){
-            int i=JOptionPane.showConfirmDialog(null, "Are you sure you want to leave our comrades ???");
+            int i=JOptionPane.showConfirmDialog(null, "Are you sure you want to leave ???");
             if(i==0)
                 System.exit(0);
         }

@@ -1,35 +1,19 @@
 package client.models.requests;
 
-import java.io.IOException;
-import java.net.Socket;
+import java.io.Serializable;
 
-import client.models.responses.UserFilesDetails;
-import client.models.responses.WordSearchMessage;
+public class SearchRequest implements Serializable{//alows us to convert the state of the object to a byte stream and vice versa
 
-public class SearchRequest extends ClientToClient {
+	private static final long serialVersionUID = -4638084621849319776L;
 	
-	public SearchRequest(Socket socket) {
-		super(socket);
+	private String keyWord;
+	
+	public SearchRequest(String keyWord) {
+		this.keyWord = keyWord;
 	}
-
-	public UserFilesDetails getUserFilesDetails(WordSearchMessage wordSearchMessage) {
-		super.doConnections();
-
-		try {
-			super.getObjectOutputStream().writeObject(wordSearchMessage);
-			
-			Object o = super.getObjectInputStream().readObject();
-			if(o instanceof UserFilesDetails) {
-				return (UserFilesDetails) o;
-			}
-			
-		} catch (ClassNotFoundException | IOException e) {
-			e.printStackTrace();
-		} finally {
-			super.closeConnections();
-		}
-		
-		return null;
+	
+	public String getKeyWord() {
+		return keyWord;
 	}
 	
 }

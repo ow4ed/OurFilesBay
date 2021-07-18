@@ -11,7 +11,6 @@ import javax.swing.JProgressBar;
 
 import client.models.coordination.FileBloksQueue;
 import client.models.responses.FileBlock;
-import client.models.responses.FileBlockRequest;
 
 public class FileRequest extends ClientToClient {
 	

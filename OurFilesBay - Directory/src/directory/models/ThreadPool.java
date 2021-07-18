@@ -1,46 +1,47 @@
 package directory.models;
 
 public class ThreadPool {
-	/*
-	 * In this package methods can throw exceptions
-	 * 
-	 */
-	
-	private BlockingQueue<Runnable> tasksQueue;//BlockingQueue of classes that implements the Runnable interface 
-	private Worker[] workers;
-	
-	public ThreadPool(int n){
-		workers = new Worker[n];
-		tasksQueue = new BlockingQueue<Runnable>();// basically i only can get tasks if they are any, otherwise thread will wait
+
+	// BlockingQueue of classes that implements the Runnable interface
+	private BlockingQueue<Runnable> tasksQueue;
+
+	public ThreadPool(int n) {
+		tasksQueue = new BlockingQueue<Runnable>();
 		
-		for(int i=0;i<n;i++){
-			Worker w = new Worker();
-			workers[i] = w;
-			
-			Thread thread = new Thread(w);
-			thread.start();		
+		for (int i = 0; i < n; i++) {
+			Worker worker= new Worker();
+			worker.run();
 		}
 	}
-	
-	public void submit(Runnable task){//only question needed to be answered what task do i submit to the pool ?
+
+	public void submit(Runnable task) {
 		try {
+			// submit task to be executed
 			tasksQueue.offer(task);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
-	
-	private class Worker implements Runnable{
+
+	private class Worker implements Runnable {
+		
 		@Override
 		public void run() {
-			while(!Thread.currentThread().isInterrupted()){
+			while (true) {
+				
 				try {
-					Runnable task =tasksQueue.take();//task is given only when tasksQueue is not empty, if not worker is put into wait()
-					task.run();//basicaly the workers only work if there is work to do,and they are notified when work is available
+					// task is given only when tasksQueue is not empty, 
+					// otherwise  worker is put into wait()
+					// basicaly the workers only work if there is work to do,and they are notified
+					// when work is available
+					Runnable task = tasksQueue.take();
+					task.run();
+					
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 	}
+	
 }

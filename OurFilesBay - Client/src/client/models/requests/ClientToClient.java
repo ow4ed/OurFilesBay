@@ -5,20 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
-/*
- * A client can have many FlieRequest instances and SearchRequest instances,
- * is a good idea to separate ClientToClient connection into those 2, 
- * this way for the many FileRquest  needed i don't have also to load the
- * SearchRequest... 
- * 
- * Imagine i file whit 1Gb:
- * i'll have like 1 million FileRequest instances
- *
- * if i merge FileRequest + SearchRequest into ClientToClient class 
- * i'll have to load SearchRequest method(part) 1 million times for no reason
- * 
- */
-
 public abstract class ClientToClient {
 	
 	private Socket socket = null;

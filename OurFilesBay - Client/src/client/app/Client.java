@@ -15,14 +15,14 @@ import javax.swing.ListModel;
 import client.gui.GraphicInterface;
 import client.models.coordination.FileBloksQueue;
 import client.models.coordination.ThreadPool;
+import client.models.requests.FileBlockRequest;
 import client.models.requests.FileRequest;
 import client.models.requests.IpsAndPortsOfUsersConnectedRequest;
 import client.models.requests.SearchRequest;
 import client.models.requests.SignUpUserRequest;
-import client.models.responses.FileBlockRequest;
 import client.models.responses.UserFilesDetails;
-import client.models.responses.WordSearchMessage;
-import client.server.ClientServer;
+import client.models.responses.SearchResponse;
+import client.server.Server;
 
 
 
@@ -103,7 +103,7 @@ public class Client{
 		try {//if this method sucess i hav
 			SignUpUserRequest clientToDirectory = new SignUpUserRequest(new Socket(directoryIp, this.directoryPort));
 			if (clientToDirectory.signUpUser("INSC " + username + " " + userIp.getHostAddress() + " " + userPort)) {
-				ClientServer server = new ClientServer(userPort, username, pool, getPath());
+				Server server = new Server(userPort, username, pool, getPath());
 				server.startServing();
 			} else {
 				System.out.println(username + " - Error during sign up request!");
@@ -141,11 +141,11 @@ public class Client{
 	 * or i can implement a new coordination_structure: barrier
 	 */
 	private void updateLists(List<String> ipsAndPortsOfUsersConnected, String searchText) {
-		WordSearchMessage wordSearchMessage = new WordSearchMessage(searchText);
+		SearchResponse wordSearchMessage = new SearchResponse(searchText);
 		for (String user : ipsAndPortsOfUsersConnected) {
 			String[] info = user.split(" ");
 			try {//SearchRequest -> 1 Connection whit an user, the way i'm doing isn't optimal yet, imagine user_1 takes 1hour to give all his files info...
-				SearchRequest clientToClient = new SearchRequest(new Socket(info[0], Integer.parseInt(info[1])));
+				SearchResponse clientToClient = new SearchResponse(new Socket(info[0], Integer.parseInt(info[1])));
 				UserFilesDetails userFilesDetails = clientToClient.getUserFilesDetails( wordSearchMessage);
 				for (File file : userFilesDetails.getFiles()) {
 					searchResultJList.addElement(

@@ -2,6 +2,7 @@ package client.server;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -10,164 +11,145 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import client.models.coordination.ThreadPool;
+import client.models.requests.FileBlockRequest;
+import client.models.requests.SearchRequest;
 import client.models.responses.FileBlock;
-import client.models.responses.FileBlockRequest;
 import client.models.responses.UserFilesDetails;
-import client.models.responses.WordSearchMessage;
 
 public class Connection implements Runnable {
-	private Socket socket = null;
-	private ObjectOutputStream objectOutputStream = null;
-	private ObjectInputStream objectInputStream = null;
-	private ThreadPool pool;
-	private String username;
-	private String path;
 
-	public Connection(Socket socket,ThreadPool pool, String username, String path) {
+	private Socket socket;
+	private String userName;
+	private String userFileSystemPath;
+
+	public Connection(Socket socket, String userName, String userFileSystemPath) {
 		this.socket = socket;
-		this.pool = pool;
-		this.username = username;
-		this.path = path;
+		this.userName = userName;
+		this.userFileSystemPath = userFileSystemPath;
 	}
 	
 	@Override
-	public synchronized void run() {
-		doConnections();
+	public void run() {
+		System.out.println("Client "+ userName +" - Connection - start");
+		
+		ObjectOutputStream out = null;
+		ObjectInputStream in = null;
+		RandomAccessFile aFile = null;
+		FileChannel inChannel = null;
+		
 		try {
-			Object o = objectInputStream.readObject();
-			//types of requests another client can make to the Client Server
-			if (o instanceof WordSearchMessage) {// if is instance of WrodSearchMessage is done whit whit the o, dosen't check it again
-				sendFilesInfo((WordSearchMessage) o);
-			} else {
-				if(o instanceof FileBlockRequest) {
-					sendFileBlocks((FileBlockRequest) o);
-				}
-			}
-		} catch (ClassNotFoundException | IOException e) { 
-			e.printStackTrace();
-		}
-	}
-	
-	private void doConnections() {
-		System.out.println(username+" - an user has has request an connection:" +socket+"(socket)");
-		try {
-			objectOutputStream = new ObjectOutputStream(socket.getOutputStream());//first we need to create out
-			objectInputStream = new ObjectInputStream(socket.getInputStream());//after creating out we can create in
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private void closeConnections() {
-		try {
-			objectOutputStream.close();
-			objectInputStream.close();
-			socket.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	private void sendFilesInfo(WordSearchMessage message) {
-		Runnable task = new Runnable() {
-			@Override
-			public void run() {
-				File[] files = findFiles(message.getMessage());// findFiles here bad
-				UserFilesDetails answer = new UserFilesDetails(username, socket.getLocalAddress().getHostAddress(),socket.getLocalPort(), files);
+			
+			out = new ObjectOutputStream(socket.getOutputStream());
+			in = new ObjectInputStream(socket.getInputStream());
+			
+			// get request Object
+			Object o = in.readObject();
+			
+			// parse request
+			if (o instanceof SearchRequest) {
+				
+				parseSearchRequest((SearchRequest) o, out);
+				
+			} else if (o instanceof FileBlockRequest){
+				
+				// get file channel for requested file
 				try {
-					try {//delete, lag simulation
-						System.out.println("SLEEPY WIPPY TIME");
-						Thread.sleep(2000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-					//	e.printStackTrace();
-					}//delete, lag simulation
-					objectOutputStream.writeObject(answer);
-				} catch (IOException e) {
-					e.printStackTrace();
-				} finally {
-					closeConnections();
+					aFile = new RandomAccessFile(userFileSystemPath + ((FileBlockRequest) o).getFileName(), "r");
+					inChannel = aFile.getChannel();
+					
+				} catch (FileNotFoundException e) {
+					// TODO:file dosen't exit anymore, //TODO generate a special response Type
+					System.out.println("Client " + userName + " - parseFileBlockRequest - got an request for file '"
+							+ ((FileBlockRequest) o).getFileName() + "' witch dosen't exits anymore");
+					return;
 				}
-			}
-		};
-		pool.submit(task);
-	}
-	
-	private void sendFileBlocks(FileBlockRequest o) {
-		int initialBlockSize = o.getSize();
-		
-		FileBlock fileBlock = new FileBlock();
-		
-		byte[] data = new byte[initialBlockSize];//in large files 99% of the blocks will have that size 
-		
-		try {
-			RandomAccessFile aFile = new RandomAccessFile(path+o.getFileName(), "r");
-			FileChannel inChannel = aFile.getChannel();
-			ByteBuffer buf = ByteBuffer.allocate(initialBlockSize);
-			while ((o instanceof FileBlockRequest) || o!=null) {//i have an while cycle, is good idea to have a thread pool
-				//System.out.println(username+" -  Enviei um File Block!");
-				
-				
-				int blockSize = o.getSize();
-				if(initialBlockSize!= blockSize) {//last block may have a different size
-					data = new byte[blockSize];
-					buf = ByteBuffer.allocate(blockSize);
-					initialBlockSize = blockSize;
-				}
-				
-				long beginning = o.getBeginning();
-				copyBytesToArray(buf,inChannel,beginning,data,initialBlockSize);
 
+				parseFileBlockRequest((FileBlockRequest) o, out, in, inChannel);
 				
-				fileBlock.setData(beginning,initialBlockSize ,data);
-				
-				try {
-					objectOutputStream.writeObject(fileBlock);
-					objectOutputStream.reset();//i'm sending the same object but modifyed!
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				
-				try {
-					o = (FileBlockRequest) objectInputStream.readObject();//while "iterator" 
-				} catch (ClassNotFoundException | IOException e) {
-					e.printStackTrace();
-				}
 			}
-		
-			inChannel.close();
-			aFile.close();
-		
-			closeConnections();//my only persistent connection!(careful when i close it on the other side)
-		} catch (IOException e2) {
-			e2.printStackTrace();
-		}//fine, because if is requested more fileBlocks from diferent file from the same user, another connection is open
-		
-	}
-	public void copyBytesToArray(ByteBuffer buf,FileChannel inChannel, long blockBeginning, byte[] dest, int size) {
-		buf.clear();
-		
-		try {
-			inChannel.position(blockBeginning);
-			inChannel.read(buf);
-		} catch (IOException e) {
+		} catch (ClassNotFoundException | IOException | InterruptedException e) { 
 			e.printStackTrace();
+		} finally {
+
+			try {
+				// stop
+				out.close();
+				in.close();
+				socket.close();
+				aFile.close();
+				inChannel.close();
+			} catch (IOException e) {
+				
+				e.printStackTrace();
+			}
 		}
 		
-		System.arraycopy(buf.array(), 0, dest, 0, size);
+		System.out.println("Client "+ userName +" - Connection - stop");
+	}
+
+	private void parseSearchRequest(SearchRequest request, ObjectOutputStream out) throws InterruptedException, IOException {
+		
+		File[] files = findFiles(request.getKeyWord());
+	
+		UserFilesDetails response = new UserFilesDetails(userName, socket.getLocalAddress().getHostAddress(),socket.getLocalPort(), files);
+				
+		//TODO:delete > lag simulation
+		System.out.println("DIzYYY");
+		Thread.sleep(2000);
+					
+		out.writeObject(response);
+	
 	}
 	
-	
-	
-	private File[] findFiles(String keyword) {// need to thing about, where to place this method
-		File[] files = new File(path).listFiles(new FileFilter() {//needs to be changed 
+	private File[] findFiles(String keyWord) {
+		File[] files = new File(userFileSystemPath).listFiles(new FileFilter() {
 			public boolean accept(File f) {
-				return f.getName().contains(keyword);
+				return f.getName().contains(keyWord);
 			}
 		});
 		return files;
 	}
-    
+
+	private void parseFileBlockRequest(FileBlockRequest request, ObjectOutputStream out, ObjectInputStream in, FileChannel inChannel)
+			throws IOException, ClassNotFoundException {
+
+		int blockSize = request.getSize();
+		ByteBuffer buf = ByteBuffer.allocate(blockSize);
+		byte[] data = new byte[blockSize];
+
+		// TODO:confirm if this is acting as an while or an if
+		while (null != request && (request instanceof FileBlockRequest)) {
+
+			// check if we are parsing the last block of the file
+			if (request.getSize() != blockSize) {
+				blockSize = request.getSize();
+				// allocate memory
+				buf = ByteBuffer.allocate(blockSize);
+				data = new byte[blockSize];
+			}
+
+			long beginning = request.getBeginning();
+
+			// copy file block bytes to array
+			buf.clear();
+			inChannel.position(beginning);
+			inChannel.read(buf);
+			System.arraycopy(buf.array(), 0, data, 0, blockSize);
+
+			// generate response object
+			FileBlock fileBlock = new FileBlock(beginning, blockSize, data);
+
+			// send response
+			out.writeObject(fileBlock);
+			out.reset();
+
+			System.out.println("Client " + userName + " - parseFileBlockRequest - Sent file block [" + beginning + "-"
+					+ (beginning + blockSize) + "] for file:" + request.getFileName());
+
+			// while "iterator"
+			request = (FileBlockRequest) in.readObject();
+		}
+
+	}
+
 }
