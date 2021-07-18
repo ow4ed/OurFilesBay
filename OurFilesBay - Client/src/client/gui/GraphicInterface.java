@@ -1,4 +1,4 @@
-package gui;
+package client.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -21,7 +21,7 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
-import client.Client;
+import client.app.Client;
 
 public class GraphicInterface {
 	

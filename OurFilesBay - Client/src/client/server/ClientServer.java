@@ -1,11 +1,11 @@
-package server_client;
+package client.server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Path;
 
-import coordination_structures_client.ThreadPool;
+import client.models.coordination.ThreadPool;
 
 public class ClientServer { ///still thinking about this part
 

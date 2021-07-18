@@ -1,4 +1,4 @@
-package coordination_structures_client;
+package client.models.coordination;
 
 import java.util.ArrayDeque;
 import java.util.Queue;

@@ -1,4 +1,4 @@
-package coordination_structures_directory;
+package client.models.coordination;
 
 public class ThreadPool {
 	/*
@@ -35,8 +35,9 @@ public class ThreadPool {
 		public void run() {
 			while(!Thread.currentThread().isInterrupted()){
 				try {
-					Runnable task =tasksQueue.take();//task is given only when tasksQueue is not empty, if not worker is put into wait()
+					Runnable task = tasksQueue.take();//task is given only when tasksQueue is not empty, if not worker is put into wait()
 					task.run();//basicaly the workers only work if there is work to do,and they are notified when work is available
+					//No new thread is created and the run() method is executed on the calling thread itself!
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

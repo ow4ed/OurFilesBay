@@ -1,4 +1,4 @@
-package server_directory;
+package directory.server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -6,7 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-import coordination_structures_directory.ThreadPool;
+import directory.models.ThreadPool;
 
 public class Directory { 
 	
@@ -16,10 +16,10 @@ public class Directory {
 	private List<String> clients = new ArrayList<String>();
 	private ThreadPool pool;
 	
-	public Directory(int port, int nCoresToUse) {
+	public Directory(int port, int threads) {
 		this.port = port;
-		this.pool = new ThreadPool(nCoresToUse); //4 cores,one unlucky worker of the ThreadPool will be working 24/7
-		//because he will be executing the task of running the server 
+		// initialize an thread pool whit n threads 
+		this.pool = new ThreadPool(threads); 
 	}
 	
 	public void startServing() {

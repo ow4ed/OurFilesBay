@@ -1,4 +1,4 @@
-package server_directory;
+package directory.server;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -9,7 +9,7 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
 
-import coordination_structures_directory.ThreadPool;
+import directory.models.ThreadPool;
 
 
 /*

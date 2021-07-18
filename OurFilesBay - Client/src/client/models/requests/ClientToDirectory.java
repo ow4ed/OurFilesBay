@@ -1,4 +1,4 @@
-package client_connection_requests;
+package client.models.requests;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

@@ -1,4 +1,4 @@
-package client;
+package client.app;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,17 +12,17 @@ import javax.swing.DefaultListModel;
 import javax.swing.JProgressBar;
 import javax.swing.ListModel;
 
-import client_connection_requests.FileRequest;
-import client_connection_requests.IpsAndPortsOfUsersConnectedRequest;
-import client_connection_requests.SearchRequest;
-import client_connection_requests.SignUpUserRequest;
-import coordination_structures_client.FileBloksQueue;
-import coordination_structures_client.ThreadPool;
-import gui.GraphicInterface;
-import serializable_objects.FileBlockRequest;
-import serializable_objects.UserFilesDetails;
-import serializable_objects.WordSearchMessage;
-import server_client.ClientServer;
+import client.gui.GraphicInterface;
+import client.models.coordination.FileBloksQueue;
+import client.models.coordination.ThreadPool;
+import client.models.requests.FileRequest;
+import client.models.requests.IpsAndPortsOfUsersConnectedRequest;
+import client.models.requests.SearchRequest;
+import client.models.requests.SignUpUserRequest;
+import client.models.responses.FileBlockRequest;
+import client.models.responses.UserFilesDetails;
+import client.models.responses.WordSearchMessage;
+import client.server.ClientServer;
 
 
 
@@ -248,7 +248,7 @@ public class Client{
 	private void downloadFileBlocks(List<String> ipsAndPortsWhereFileExists,
 			JProgressBar progressJProgressBar, long lastBlockBeginning, String[] info) throws IOException {
 		
-		long numberOfBlocks = Long.parseLong(info[1]) / BLOCK_SIZE;// must round down    31 298,73642 -> 31298
+		long numberOfBlocks = Long.parseLong(info[1]) / BLOCK_SIZE;// must round down    31ï¿½298,73642 -> 31298
 
 		if((Long.parseLong(info[1]) % BLOCK_SIZE)>0) {
 			numberOfBlocks = numberOfBlocks +1 ;

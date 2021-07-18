@@ -1,10 +1,10 @@
-package client_connection_requests;
+package client.models.requests;
 
 import java.io.IOException;
 import java.net.Socket;
 
-import serializable_objects.UserFilesDetails;
-import serializable_objects.WordSearchMessage;
+import client.models.responses.UserFilesDetails;
+import client.models.responses.WordSearchMessage;
 
 public class SearchRequest extends ClientToClient {
 	

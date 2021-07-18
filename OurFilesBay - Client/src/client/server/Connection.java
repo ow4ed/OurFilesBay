@@ -1,4 +1,4 @@
-package server_client;
+package client.server;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -10,11 +10,11 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import coordination_structures_client.ThreadPool;
-import serializable_objects.FileBlockRequest;
-import serializable_objects.FileBlock;
-import serializable_objects.UserFilesDetails;
-import serializable_objects.WordSearchMessage;
+import client.models.coordination.ThreadPool;
+import client.models.responses.FileBlock;
+import client.models.responses.FileBlockRequest;
+import client.models.responses.UserFilesDetails;
+import client.models.responses.WordSearchMessage;
 
 public class Connection implements Runnable {
 	private Socket socket = null;

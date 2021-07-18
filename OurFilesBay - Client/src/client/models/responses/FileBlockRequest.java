@@ -1,4 +1,4 @@
-package serializable_objects;
+package client.models.responses;
 
 import java.io.Serializable;
 

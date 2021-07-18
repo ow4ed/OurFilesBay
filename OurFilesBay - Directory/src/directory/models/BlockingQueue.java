@@ -1,4 +1,4 @@
-package coordination_structures_directory;
+package directory.models;
 
 import java.util.ArrayDeque;
 import java.util.Queue;

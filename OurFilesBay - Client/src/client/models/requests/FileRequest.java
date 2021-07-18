@@ -1,4 +1,4 @@
-package client_connection_requests;
+package client.models.requests;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,9 +9,9 @@ import java.nio.channels.FileChannel;
 
 import javax.swing.JProgressBar;
 
-import coordination_structures_client.FileBloksQueue;
-import serializable_objects.FileBlockRequest;
-import serializable_objects.FileBlock;
+import client.models.coordination.FileBloksQueue;
+import client.models.responses.FileBlock;
+import client.models.responses.FileBlockRequest;
 
 public class FileRequest extends ClientToClient {
 	
