@@ -1,25 +1,25 @@
-package client.models.responses;
+package client.client;
 
 import java.io.IOException;
 import java.net.Socket;
 
 import client.models.requests.RequestBase;
 
-public class SearchResponse extends RequestBase {
+public class SearchRequest extends RequestBase {
 	
-	public SearchResponse(Socket socket) {
+	public SearchRequest(Socket socket) {
 		super(socket);
 	}
 
-	public UserFilesDetails getUserFilesDetails(SearchResponse wordSearchMessage) {
+	public SearchRequest getUserFilesDetails(SearchRequest wordSearchMessage) {
 		super.doConnections();
 
 		try {
 			super.getObjectOutputStream().writeObject(wordSearchMessage);
 			
 			Object o = super.getObjectInputStream().readObject();
-			if(o instanceof UserFilesDetails) {
-				return (UserFilesDetails) o;
+			if(o instanceof SearchRequest) {
+				return (SearchRequest) o;
 			}
 			
 		} catch (ClassNotFoundException | IOException e) {

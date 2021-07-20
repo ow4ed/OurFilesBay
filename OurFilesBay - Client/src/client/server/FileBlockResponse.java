@@ -1,4 +1,4 @@
-package client.models.responses;
+package client.server;
 
 import java.io.Serializable;
 

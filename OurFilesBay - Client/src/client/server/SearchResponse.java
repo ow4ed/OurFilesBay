@@ -1,9 +1,9 @@
-package client.models.responses;
+package client.server;
 
 import java.io.File;
 import java.io.Serializable;
 
-public class UserFilesDetails implements Serializable{
+public class SearchResponse implements Serializable{
 
 	private static final long serialVersionUID = -6085430478278137543L;
 	
@@ -13,7 +13,7 @@ public class UserFilesDetails implements Serializable{
 	
 	private File[] files;
  	
-	public UserFilesDetails(String userName, String ip, int port,File[] files) {
+	public SearchResponse(String userName, String ip, int port,File[] files) {
 		this.files = files;
 		this.userName = userName;
 		this.ip = ip;

@@ -1,4 +1,4 @@
-package directory.models;
+package client.models.coordination;
 
 public class ThreadPool {
 
@@ -29,7 +29,7 @@ public class ThreadPool {
 		}
 	}
 	
-	public void shutDown() {
+	public void shutDownPool() {
 		for(Worker worker: workers) {
 			worker.shutDown();
 		}
@@ -37,15 +37,17 @@ public class ThreadPool {
 
 	private class Worker implements Runnable {
 
-		private boolean online;
+		private boolean work;
+
+		public Worker() {
+			this.work = true;
+		}
 		
 		@Override
 		public void run() {
 			
-			this.online = true;
-			
 			try {
-				while (online) {
+				while (work) {
 
 					// task is given only when tasksQueue is not empty,
 					// otherwise worker is put into wait()
@@ -56,13 +58,14 @@ public class ThreadPool {
 
 				}
 				System.out.println("Worker has been Stoped");
+				
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 		
 		public void shutDown() {
-			this.online = false;
+			this.work = false;
 		}
 	}
 	

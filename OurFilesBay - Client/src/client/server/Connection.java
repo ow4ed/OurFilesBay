@@ -13,8 +13,6 @@ import java.nio.channels.FileChannel;
 
 import client.models.requests.FileBlockRequest;
 import client.models.requests.SearchRequest;
-import client.models.responses.FileBlockResponse;
-import client.models.responses.UserFilesDetails;
 
 public class Connection implements Runnable {
 
@@ -91,7 +89,7 @@ public class Connection implements Runnable {
 		
 		File[] files = findFiles(request.getKeyWord());
 	
-		UserFilesDetails response = new UserFilesDetails(userName, socket.getLocalAddress().getHostAddress(),socket.getLocalPort(), files);
+		SearchResponse response = new SearchResponse(userName, socket.getLocalAddress().getHostAddress(),socket.getLocalPort(), files);
 				
 		//TODO:delete > lag simulation
 		System.out.println("DIzYYY");

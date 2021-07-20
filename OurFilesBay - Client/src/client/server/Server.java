@@ -8,12 +8,14 @@ import client.models.coordination.ThreadPool;
 
 public class Server implements Runnable{
 
+	private boolean online;
 	private int port;
 	private ThreadPool pool;
 	private String userName;
 	private String userFileSystemPath;
 
 	public Server(int port, int threads, String userName, String userFileSystemPath) {
+		this.online = true;
 		this.port = port;
 		// initialize an thread pool whit n threads 
 		this.pool = new ThreadPool(threads); 
@@ -30,7 +32,7 @@ public class Server implements Runnable{
 			
 			serverSocket = new ServerSocket(port);
 			
-			while (true) {
+			while (online) {
 				System.out.println("Client "+ userName +" - Server - server in standbay ...");
 				
 				// actively looking for next client connection to accept
@@ -50,12 +52,17 @@ public class Server implements Runnable{
 			try {
 				// stop
 				serverSocket.close();
+				pool.shutDownPool();
 			} catch (IOException e2) {
 				e2.printStackTrace();
 			}
 		}
 
 		System.out.println("Client "+ userName +" - Server - stop");
+	}
+	
+	public void shutDown() {
+		this.online = false;
 	}
 
 }

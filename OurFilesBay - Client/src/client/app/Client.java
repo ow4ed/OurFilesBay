@@ -20,9 +20,8 @@ import client.models.requests.FileRequest;
 import client.models.requests.IpsAndPortsOfUsersConnectedRequest;
 import client.models.requests.SearchRequest;
 import client.models.requests.SignupRequest;
-import client.models.responses.UserFilesDetails;
-import client.models.responses.SearchResponse;
 import client.server.Server;
+import client.server.SearchResponse;
 
 
 
@@ -141,12 +140,12 @@ public class Client{
 	 * or i can implement a new coordination_structure: barrier
 	 */
 	private void updateLists(List<String> ipsAndPortsOfUsersConnected, String searchText) {
-		SearchResponse wordSearchMessage = new SearchResponse(searchText);
+		SearchRequest wordSearchMessage = new SearchRequest(searchText);
 		for (String user : ipsAndPortsOfUsersConnected) {
 			String[] info = user.split(" ");
 			try {//SearchRequest -> 1 Connection whit an user, the way i'm doing isn't optimal yet, imagine user_1 takes 1hour to give all his files info...
-				SearchResponse clientToClient = new SearchResponse(new Socket(info[0], Integer.parseInt(info[1])));
-				UserFilesDetails userFilesDetails = clientToClient.getUserFilesDetails( wordSearchMessage);
+				SearchRequest clientToClient = new SearchRequest(new Socket(info[0], Integer.parseInt(info[1])));
+				SearchRequest userFilesDetails = clientToClient.getUserFilesDetails( wordSearchMessage);
 				for (File file : userFilesDetails.getFiles()) {
 					searchResultJList.addElement(
 							userFilesDetails.getUserName() + ": " + file.getName() + " ," + file.length() + " bytes");

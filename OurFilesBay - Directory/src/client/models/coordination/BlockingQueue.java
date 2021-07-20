@@ -2,7 +2,7 @@
  * Used in ThreadPool
  * 
  */
-package directory.models;
+package client.models.coordination;
 
 import java.util.ArrayDeque;
 import java.util.Queue;

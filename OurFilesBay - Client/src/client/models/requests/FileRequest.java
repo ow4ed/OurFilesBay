@@ -10,7 +10,7 @@ import java.nio.channels.FileChannel;
 import javax.swing.JProgressBar;
 
 import client.models.coordination.FileBloksQueue;
-import client.models.responses.FileBlockResponse;
+import client.server.FileBlockResponse;
 
 public class FileRequest extends RequestBase {
 	

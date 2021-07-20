@@ -4,13 +4,19 @@ public class ThreadPool {
 
 	// BlockingQueue of classes that implements the Runnable interface
 	private BlockingQueue<Runnable> tasksQueue;
+	private Worker[] workers;
 
 	public ThreadPool(int n) {
+		
 		tasksQueue = new BlockingQueue<Runnable>();
+		workers = new Worker[n];
 		
 		for (int i = 0; i < n; i++) {
 			Worker worker= new Worker();
-			worker.run();
+			workers[i] = worker;
+			
+			Thread workerThread = new Thread(worker);
+			workerThread.start();
 		}
 	}
 
@@ -22,25 +28,43 @@ public class ThreadPool {
 			e.printStackTrace();
 		}
 	}
+	
+	public void shutDownPool() {
+		for(Worker worker: workers) {
+			worker.shutDown();
+		}
+	}
 
 	private class Worker implements Runnable {
+
+		private boolean work;
+
+		public Worker() {
+			this.work = true;
+		}
 		
 		@Override
 		public void run() {
-			while (true) {
-				
-				try {
-					// task is given only when tasksQueue is not empty, 
-					// otherwise  worker is put into wait()
+			
+			try {
+				while (work) {
+
+					// task is given only when tasksQueue is not empty,
+					// otherwise worker is put into wait()
 					// basicaly the workers only work if there is work to do,and they are notified
 					// when work is available
 					Runnable task = tasksQueue.take();
 					task.run();
-					
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+
 				}
+				System.out.println("Worker has been Stoped");
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
+		}
+		
+		public void shutDown() {
+			this.work = false;
 		}
 	}
 	

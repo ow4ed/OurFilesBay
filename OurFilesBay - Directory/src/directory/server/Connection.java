@@ -1,13 +1,16 @@
 package directory.server;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.List;
+
+import directory.models.ErrorResponseType;
+import directory.models.GetClientsRequestType;
+import directory.models.GetClientsResponseType;
+import directory.models.SignupRequestType;
+import directory.models.SingupResponseType;
 
 public class Connection implements Runnable {
 	
@@ -21,47 +24,20 @@ public class Connection implements Runnable {
 	
 	@Override
 	public void run() {
-		System.out.println("Directory - Connection - start");
+		System.out.println("Directory - Connection - thread start");
 		
-		PrintWriter out = null;
-		BufferedReader in = null;
+		ObjectOutputStream out = null;
+		ObjectInputStream in = null;
 		
 		try {
-			out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			out = new ObjectOutputStream(socket.getOutputStream());
+			in = new ObjectInputStream(socket.getInputStream());
 			
-			String request = in.readLine();
-			System.out.println("Directory - Connection - recived Request: " + request);
+			handleRequest(out,in);
 			
-			// analyze request and send back a response
-			String[] requerstInfo = request.split(" ");
-			if ("INSC".equals(requerstInfo[0])) {
-				
-				// get client port from request
-				String clientPort = request.substring(5, request.length());
-		
-				// add client port to clients ports list
-				synchronized (clients) {
-					clients.add(clientPort);
-				}
-				
-				// send back an response
-				out.println("accepted");
-				
-			} else if ("CLT".equals(requerstInfo[0])) {
-				
-				synchronized (clients) {
-					// send back multiple responses ( other clients ports)
-					for (String s : clients) {
-						out.println(s);
-					}
-					// client interprets this "END" as the end of the list
-					out.println("END");
-				}
-
-			}
+						
+		// exceptions during client connection only shut down connection
 		} catch (IOException e) {
-			
 			e.printStackTrace();
 		} finally {
 
@@ -76,7 +52,72 @@ public class Connection implements Runnable {
 			}
 		}
 		
-		System.out.println("Directory - Connection - stop");
+		System.out.println("Directory - Connection - thread stop");
+	}
+
+	private void handleRequest(ObjectOutputStream out, ObjectInputStream in) throws IOException {
+		System.out.println("Directory - handleRequest - Start");
+		
+		try {
+			// get request Object
+			Object o = in.readObject();
+			
+			// parse request
+			if (o instanceof SignupRequestType) {
+		
+				SignupRequestType request = (SignupRequestType) o;
+				
+				SingupResponseType response = new SingupResponseType();
+				
+				// add client port to singed up clients data list
+				synchronized (clients) {
+					// TODO: validations
+					if(!clients.contains(request.getClientPort())) {
+						clients.add(request.getClientPort());
+						response.setSignedUp(true);
+					} else {
+						response.setSignedUp(false);
+					}
+				}
+				
+				// send back an response
+				out.writeObject(response);
+				
+			} else if (o instanceof GetClientsRequestType) {
+				
+				GetClientsRequestType request = (GetClientsRequestType) o;
+				
+				GetClientsResponseType response = new GetClientsResponseType();
+			
+				synchronized (clients) {
+					response.setNewClients(clients);
+				}
+				
+				// do not sent already known clients
+				response.getNewClients().removeAll(request.getCurrentClients());
+				
+				// do not send more than the number of clients asked
+				response.setNewClients(response.getNewClients().subList(0, request.getNumberOfClients()));
+
+				
+				// send back an response
+				out.writeObject(response);
+			
+			// if request class object is found but is invalid
+			} else {
+				
+				throw new ClassNotFoundException();
+			}
+
+		} catch (ClassNotFoundException e) {
+			// send back an response ( bad request, invalid type )
+			ErrorResponseType response = new ErrorResponseType();
+			response.setReason("Invalid request type");
+			out.writeObject(response);
+		}
+		
+		System.out.println("Directory - handleRequest - End");
+		
 	}
 
 }
